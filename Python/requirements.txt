@@ -1,0 +1,7 @@
+# Enterprise Retail Analytics Platform - Data Generation Dependencies
+# Install: pip install -r requirements.txt
+
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+faker>=18.0.0,<30.0.0
+pytest>=7.4.0,<9.0.0
