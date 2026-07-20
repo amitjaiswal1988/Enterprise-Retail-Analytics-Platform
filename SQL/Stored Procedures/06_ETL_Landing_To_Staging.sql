@@ -30,6 +30,12 @@
 USE RetailDW;
 GO
 
+-- Procedures capture SET options at creation time; ensure correct settings
+-- for computed columns / indexed access across all clients.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- =============================================================================
 -- PROCEDURE 1: staging.usp_Load_Regions
 -- =============================================================================
@@ -515,10 +521,13 @@ BEGIN
     
     DECLARE @EndTime DATETIME2 = GETDATE();
     DECLARE @Duration INT = DATEDIFF(SECOND, @StartTime, @EndTime);
-    
+
+    DECLARE @QuarantineCount INT;
+    SELECT @QuarantineCount = COUNT(*) FROM staging.Quarantine WHERE ResolvedAt IS NULL;
+
     PRINT '============================================================';
     PRINT '  ETL Complete (Duration: ' + CAST(@Duration AS VARCHAR) + ' seconds)';
-    PRINT '  Quarantine rows: ' + CAST((SELECT COUNT(*) FROM staging.Quarantine WHERE ResolvedAt IS NULL) AS VARCHAR);
+    PRINT '  Quarantine rows: ' + CAST(@QuarantineCount AS VARCHAR);
     PRINT '============================================================';
 END;
 GO

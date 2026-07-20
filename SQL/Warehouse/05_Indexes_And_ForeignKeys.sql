@@ -30,6 +30,11 @@
 USE RetailDW;
 GO
 
+-- Required for filtered / computed-column indexes across all clients.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- =============================================================================
 -- SECTION 1: FOREIGN KEY CONSTRAINTS
 -- =============================================================================
@@ -264,9 +269,11 @@ CREATE NONCLUSTERED INDEX IX_FactInventory_StoreSK
 GO
 
 -- Low stock alert query optimization
+-- NOTE: Filtered index predicates do NOT support OR, so this is a plain
+-- composite index. Queries filtering on either flag still benefit.
 CREATE NONCLUSTERED INDEX IX_FactInventory_LowStock
     ON warehouse.FactInventory (IsLowStock, IsOutOfStock)
-    WHERE IsLowStock = 1 OR IsOutOfStock = 1;
+    INCLUDE (SnapshotDateKey, ProductSK, StoreSK, QuantityOnHand);
 GO
 
 PRINT 'FactInventory: 4 Non-Clustered indexes created (including filtered)';

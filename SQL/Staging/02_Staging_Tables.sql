@@ -29,6 +29,12 @@
 USE RetailDW;
 GO
 
+-- Required for computed columns / filtered indexes across all clients
+-- (sqlcmd defaults these OFF).
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- ---------------------------------------------------------------------------
 -- Table 1: staging.Regions
 -- ---------------------------------------------------------------------------

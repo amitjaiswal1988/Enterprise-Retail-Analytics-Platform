@@ -24,6 +24,11 @@
 USE RetailDW;
 GO
 
+-- Required for computed columns / filtered indexes across all clients.
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- ---------------------------------------------------------------------------
 -- Fact 1: warehouse.FactSales
 -- Grain: One row per order line item (OrderDetail level)

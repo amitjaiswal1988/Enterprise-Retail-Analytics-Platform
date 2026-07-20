@@ -44,6 +44,12 @@
 USE RetailDW;
 GO
 
+-- Required for PERSISTED computed columns / filtered indexes to be created
+-- reliably across all clients (sqlcmd defaults these OFF).
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- ---------------------------------------------------------------------------
 -- Dimension 1: warehouse.DimDate (Role-Playing Date Dimension)
 -- Generated independently — NOT from source CSV

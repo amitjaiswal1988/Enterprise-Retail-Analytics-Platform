@@ -26,6 +26,11 @@
 USE RetailDW;
 GO
 
+-- Consistent SET options across all clients (sqlcmd defaults these OFF).
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 -- ---------------------------------------------------------------------------
 -- Table 1: landing.Regions
 -- Source: Dataset/regions.csv (4 rows)
