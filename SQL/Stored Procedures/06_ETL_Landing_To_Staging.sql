@@ -262,9 +262,12 @@ BEGIN
     FROM landing.Customers
     WHERE CustomerID IS NOT NULL
       AND TRY_CAST(JoinDate AS DATE) IS NOT NULL;
-    
+
+    -- Capture the INSERT row count FIRST: the SELECT COUNT(*) below is a scalar
+    -- assignment that would reset @@ROWCOUNT to 1 before we can print it.
+    DECLARE @RowsLoaded INT = @@ROWCOUNT;
     DECLARE @MissingEmails INT = (SELECT COUNT(*) FROM staging.Customers WHERE _IsEmailMissing = 1);
-    PRINT 'staging.Customers loaded: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' rows (' 
+    PRINT 'staging.Customers loaded: ' + CAST(@RowsLoaded AS VARCHAR) + ' rows (' 
           + CAST(@MissingEmails AS VARCHAR) + ' with missing email flagged)';
 END;
 GO
@@ -323,6 +326,8 @@ BEGIN
     FROM Deduplicated
     WHERE rn = 1;
     
+    -- Capture the INSERT row count before the scalar SELECT below resets @@ROWCOUNT.
+    DECLARE @RowsLoaded INT = @@ROWCOUNT;
     DECLARE @DuplicatesRemoved INT;
     SET @DuplicatesRemoved = (
         SELECT COUNT(*) - COUNT(DISTINCT CONCAT(OrderID, '-', CustomerID, '-', OrderDate))
@@ -330,7 +335,7 @@ BEGIN
         WHERE TRY_CAST(OrderDate AS DATE) <= @MaxValidDate
     );
     
-    PRINT 'staging.Orders loaded: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' rows';
+    PRINT 'staging.Orders loaded: ' + CAST(@RowsLoaded AS VARCHAR) + ' rows';
     PRINT '  → Duplicates removed (DEF-02): ' + CAST(@DuplicatesRemoved AS VARCHAR);
     PRINT '  → Future dates quarantined (DEF-03): ' + CAST(@QuarantinedRows AS VARCHAR);
 END;
@@ -378,10 +383,12 @@ BEGIN
       AND TRY_CAST(od.UnitPrice AS DECIMAL(10,2)) IS NOT NULL
       AND TRY_CAST(od.Quantity AS INT) IS NOT NULL;
     
+    -- Capture the INSERT row count before the scalar SELECTs below reset @@ROWCOUNT.
+    DECLARE @RowsLoaded INT = @@ROWCOUNT;
     DECLARE @QtyCorrected INT = (SELECT COUNT(*) FROM staging.OrderDetails WHERE _IsQuantityCorrected = 1);
     DECLARE @OrphanProds INT = (SELECT COUNT(*) FROM staging.OrderDetails WHERE _IsOrphanProduct = 1);
     
-    PRINT 'staging.OrderDetails loaded: ' + CAST(@@ROWCOUNT AS VARCHAR) + ' rows';
+    PRINT 'staging.OrderDetails loaded: ' + CAST(@RowsLoaded AS VARCHAR) + ' rows';
     PRINT '  → Negative quantities corrected (DEF-06): ' + CAST(@QtyCorrected AS VARCHAR);
     PRINT '  → Orphan products flagged (DEF-04): ' + CAST(@OrphanProds AS VARCHAR);
 END;
@@ -498,6 +505,11 @@ BEGIN
     PRINT '============================================================';
     PRINT '  ETL: Landing → Staging (Start: ' + CONVERT(VARCHAR, @StartTime, 120) + ')';
     PRINT '============================================================';
+    
+    -- Reset the Quarantine log so a re-run does not accumulate duplicate
+    -- defect rows (each load proc INSERTs into it but never clears it).
+    -- Keeps the whole ETL idempotent / safely re-runnable.
+    TRUNCATE TABLE staging.Quarantine;
     
     -- Layer 1: Reference/Static dimensions (no dependencies)
     EXEC staging.usp_Load_Regions;
