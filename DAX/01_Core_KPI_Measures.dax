@@ -1,0 +1,471 @@
+// =============================================================================
+// SHOPSTAR RETAIL — DAX MEASURES (Industry Standard)
+// =============================================================================
+// FILE: 01_Core_KPI_Measures.dax
+// PURPOSE: 100+ DAX measures used daily in enterprise retail BI
+// MODEL: Star Schema (FactSales, FactReturns, FactInventory + 8 Dimensions)
+// USAGE: Copy-paste into Power BI Desktop → New Measure
+// AUTHOR: BI Development Team
+// =============================================================================
+//
+// HOW TO USE IN POWER BI:
+//   1. Open Power BI Desktop
+//   2. Select any table in Fields pane
+//   3. Click "New Measure" (top ribbon)
+//   4. Paste the formula
+//   5. Press Enter (measure created!)
+//
+// NAMING CONVENTION:
+//   [Category] Measure Name = formula
+//   Example: [Sales] Total Revenue = SUM(FactSales[LineTotal])
+//
+// =============================================================================
+
+
+// =============================================================================
+// SECTION 1: REVENUE MEASURES (Daily use — every dashboard needs these)
+// =============================================================================
+
+// WHAT: Total revenue from all sales (after discounts)
+// WHY: #1 KPI — CEO asks "How much did we sell?" every morning
+// WHEN: Used on EVERY dashboard, EVERY KPI card
+// POWER BI: KPI Card, Line Chart Y-axis, Matrix Values
+// INTERVIEW: "What's the most basic measure in retail?" → This one.
+Total Revenue = 
+    SUM(FactSales[LineTotal])
+
+// WHAT: Total number of orders placed
+// WHY: Volume metric — "Are customers ordering more or less?"
+// WHEN: Executive dashboard, trend analysis
+// POWER BI: KPI Card, paired with Revenue for AOV calculation
+Total Orders = 
+    DISTINCTCOUNT(FactSales[OrderID])
+
+// WHAT: Revenue divided by order count
+// WHY: "Are customers spending MORE per visit?" (upsell effectiveness)
+// WHEN: Weekly review, marketing campaign measurement
+// POWER BI: KPI Card with target line ($150 target)
+// INTERVIEW: "How do you measure basket size?" → AOV
+Average Order Value = 
+    DIVIDE([Total Revenue], [Total Orders], 0)
+
+// WHAT: Total units sold across all products
+// WHY: Volume driver — "Did we sell more ITEMS or just more expensive items?"
+// WHEN: Operations review, inventory planning
+Total Quantity Sold = 
+    SUM(FactSales[Quantity])
+
+// WHAT: Revenue per unit sold
+// WHY: Pricing effectiveness — "Are discounts eroding our price?"
+// WHEN: Pricing strategy review, category manager meetings
+Average Selling Price = 
+    DIVIDE([Total Revenue], [Total Quantity Sold], 0)
+
+// WHAT: Count of unique customers who purchased
+// WHY: "How many PEOPLE are buying?" (different from order count)
+// WHEN: Customer dashboard, marketing ROI
+Total Customers = 
+    DISTINCTCOUNT(FactSales[CustomerSK])
+
+// WHAT: Revenue per customer
+// WHY: Customer value metric — "How much does each customer contribute?"
+// WHEN: Customer segmentation, CLV analysis
+Revenue Per Customer = 
+    DIVIDE([Total Revenue], [Total Customers], 0)
+
+
+// =============================================================================
+// SECTION 2: PROFITABILITY MEASURES (Finance team uses daily)
+// =============================================================================
+
+// WHAT: Total cost of goods sold
+// WHY: "How much did the PRODUCTS cost us?" (before any margin)
+// WHEN: P&L reporting, margin analysis
+// POWER BI: Usually hidden from business users, used in calculations
+Total COGS = 
+    SUM(FactSales[LineCOGS])
+
+// WHAT: Revenue minus cost = actual profit on products
+// WHY: THE profit metric — "Are we making money on what we sell?"
+// WHEN: Every finance meeting, category review
+// POWER BI: KPI Card, Waterfall chart, Matrix
+// INTERVIEW: "Difference between Gross and Net Profit?" → Gross = before OpEx
+Gross Profit = 
+    SUM(FactSales[GrossProfit])
+
+// WHAT: Profit as % of revenue
+// WHY: "For every $1 sold, how many CENTS do we keep?" (target: 35%+)
+// WHEN: Executive dashboard, product pricing decisions
+// POWER BI: KPI Card with conditional formatting (Red < 30%, Green > 35%)
+Gross Margin % = 
+    DIVIDE([Gross Profit], [Total Revenue], 0)
+
+// WHAT: Total discount amount given
+// WHY: "How much are we GIVING AWAY?" (discount control)
+// WHEN: Promotion analysis, markdown management
+Total Discount Amount = 
+    SUM(FactSales[DiscountAmount])
+
+// WHAT: Discount as % of original revenue
+// WHY: "Are we discounting too much?" (margin erosion tracking)
+// WHEN: Weekly promo review, category manager KPI
+Discount Rate % = 
+    DIVIDE([Total Discount Amount], [Total Revenue] + [Total Discount Amount], 0)
+
+
+// =============================================================================
+// SECTION 3: TIME INTELLIGENCE (Most asked in interviews!)
+// =============================================================================
+
+// WHAT: Revenue for the year up to the current date
+// WHY: "Where are we vs annual target?" (track progress through the year)
+// WHEN: Executive dashboard, monthly business review
+// POWER BI: KPI Card with annual target comparison
+// INTERVIEW: "Write a YTD measure" — #1 most common DAX interview question
+// REQUIRES: DimDate table marked as Date Table
+Revenue YTD = 
+    CALCULATE(
+        [Total Revenue],
+        DATESYTD(DimDate[FullDate])
+    )
+
+// WHAT: Revenue for current quarter to date
+// WHY: "How is this quarter tracking?" (quarterly bonus tracking)
+// WHEN: Quarterly business review
+Revenue QTD = 
+    CALCULATE(
+        [Total Revenue],
+        DATESQTD(DimDate[FullDate])
+    )
+
+// WHAT: Revenue for current month to date
+// WHY: "How are we doing THIS month?" (daily ops review)
+// WHEN: Daily standup, weekly team meeting
+Revenue MTD = 
+    CALCULATE(
+        [Total Revenue],
+        DATESMTD(DimDate[FullDate])
+    )
+
+// WHAT: Revenue from same period last year
+// WHY: "Are we GROWING?" (YoY comparison baseline)
+// WHEN: Every time trend is shown
+// POWER BI: Line chart second series, comparison column in matrix
+Revenue Prior Year = 
+    CALCULATE(
+        [Total Revenue],
+        SAMEPERIODLASTYEAR(DimDate[FullDate])
+    )
+
+// WHAT: Percentage growth compared to prior year
+// WHY: THE growth metric — "Are we beating last year?" (target: 8%+)
+// WHEN: Executive dashboard, investor reporting
+// POWER BI: KPI Card with up/down arrow, conditional color
+// INTERVIEW: "Calculate YoY growth" — always asked
+Revenue YoY Growth % = 
+    VAR CurrentRevenue = [Total Revenue]
+    VAR PriorRevenue = [Revenue Prior Year]
+    RETURN
+        DIVIDE(CurrentRevenue - PriorRevenue, PriorRevenue, 0)
+
+// WHAT: Revenue from previous month
+// WHY: "How did last month compare?" (monthly trend)
+// WHEN: Monthly review meeting
+Revenue Prior Month = 
+    CALCULATE(
+        [Total Revenue],
+        PREVIOUSMONTH(DimDate[FullDate])
+    )
+
+// WHAT: Month-over-month growth percentage
+// WHY: Short-term trend — "Are we accelerating or slowing?"
+// WHEN: Weekly/monthly ops review
+Revenue MoM Growth % = 
+    VAR CurrentMonth = [Total Revenue]
+    VAR PrevMonth = [Revenue Prior Month]
+    RETURN
+        DIVIDE(CurrentMonth - PrevMonth, PrevMonth, 0)
+
+// WHAT: Average revenue over rolling 3 months
+// WHY: Smooths out seasonal spikes — "What's the TREND?"
+// WHEN: Trend analysis, forecasting input
+// POWER BI: Line chart overlay on monthly revenue
+Revenue 3M Moving Average = 
+    AVERAGEX(
+        DATESINPERIOD(DimDate[FullDate], MAX(DimDate[FullDate]), -3, MONTH),
+        [Total Revenue]
+    )
+
+// WHAT: Sum of last 12 months revenue (rolling, not calendar year)
+// WHY: "Annual run rate" — removes seasonality from annual view
+// WHEN: Board presentations, investor deck
+Revenue Rolling 12 Months = 
+    CALCULATE(
+        [Total Revenue],
+        DATESINPERIOD(DimDate[FullDate], MAX(DimDate[FullDate]), -12, MONTH)
+    )
+
+// WHAT: Cumulative revenue building up through the year
+// WHY: Shows running total against annual target line
+// WHEN: Target tracking dashboard
+// POWER BI: Area chart with target line overlay
+Revenue Running Total = 
+    CALCULATE(
+        [Total Revenue],
+        FILTER(
+            ALL(DimDate),
+            DimDate[FullDate] <= MAX(DimDate[FullDate])
+        )
+    )
+
+
+// =============================================================================
+// SECTION 4: CUSTOMER ANALYTICS (Customer Dashboard)
+// =============================================================================
+
+// WHAT: Customers who ordered more than once
+// WHY: "Are customers coming BACK?" (loyalty indicator)
+// WHEN: Customer retention analysis, marketing effectiveness
+Repeat Customers = 
+    COUNTROWS(
+        FILTER(
+            VALUES(FactSales[CustomerSK]),
+            CALCULATE(DISTINCTCOUNT(FactSales[OrderID])) > 1
+        )
+    )
+
+// WHAT: % of customers who purchased again
+// WHY: "What's our retention?" (target: 40%+)
+// WHEN: Customer dashboard, CMO review
+// INTERVIEW: "How do you measure customer loyalty?" → This
+Repeat Purchase Rate % = 
+    DIVIDE([Repeat Customers], [Total Customers], 0)
+
+// WHAT: Customers who purchased this year but NOT last year
+// WHY: "How many NEW people are we acquiring?" (growth metric)
+// WHEN: Customer acquisition analysis, marketing spend justification
+New Customers = 
+    VAR CurrentYearCustomers = 
+        CALCULATETABLE(
+            VALUES(FactSales[CustomerSK]),
+            DATESYTD(DimDate[FullDate])
+        )
+    VAR PriorYearCustomers = 
+        CALCULATETABLE(
+            VALUES(FactSales[CustomerSK]),
+            SAMEPERIODLASTYEAR(DATESYTD(DimDate[FullDate]))
+        )
+    RETURN
+        COUNTROWS(EXCEPT(CurrentYearCustomers, PriorYearCustomers))
+
+
+// =============================================================================
+// SECTION 5: PRODUCT ANALYTICS (Product Dashboard)
+// =============================================================================
+
+// WHAT: Count of unique products sold
+// WHY: "How many of our SKUs are actually selling?" (assortment health)
+// WHEN: Category review, inventory optimization
+Products Sold Count = 
+    DISTINCTCOUNT(FactSales[ProductSK])
+
+// WHAT: Revenue per product (when filtered to single product)
+// WHY: Product performance ranking
+// WHEN: Product dashboard drill-through
+Revenue Per Product = 
+    DIVIDE([Total Revenue], [Products Sold Count], 0)
+
+
+// =============================================================================
+// SECTION 6: STORE & CHANNEL ANALYTICS (Store Dashboard)
+// =============================================================================
+
+// WHAT: Revenue from physical stores only
+// WHY: "How are our STORES performing vs online?"
+// WHEN: Channel comparison, real estate decisions
+Store Revenue = 
+    CALCULATE(
+        [Total Revenue],
+        FactSales[Channel] = "Store"
+    )
+
+// WHAT: Revenue from e-commerce only
+// WHY: "How is our ONLINE channel growing?"
+// WHEN: Digital strategy review, channel investment decisions
+Ecommerce Revenue = 
+    CALCULATE(
+        [Total Revenue],
+        FactSales[Channel] = "E-commerce"
+    )
+
+// WHAT: Online as % of total revenue
+// WHY: "How much of our business is digital?" (digital transformation KPI)
+// WHEN: Executive dashboard, board reporting
+// POWER BI: Donut chart (Store vs Ecommerce)
+Ecommerce Share % = 
+    DIVIDE([Ecommerce Revenue], [Total Revenue], 0)
+
+// WHAT: Number of stores that had sales
+// WHY: "Are all our stores productive?" (zero-revenue stores = problem)
+// WHEN: Operations review
+Active Stores = 
+    DISTINCTCOUNT(FactSales[StoreSK])
+
+// WHAT: Revenue divided by number of stores
+// WHY: "How productive is EACH store on average?" (real estate ROI)
+// WHEN: Store performance ranking, expansion decisions
+Revenue Per Store = 
+    DIVIDE([Total Revenue], [Active Stores], 0)
+
+
+// =============================================================================
+// SECTION 7: RETURNS ANALYTICS (Product/Sales Dashboard)
+// =============================================================================
+
+// WHAT: Total refund amount given back to customers
+// WHY: "How much money are we GIVING BACK?" (cost of quality)
+// WHEN: Returns dashboard, product quality review
+Total Refunds = 
+    SUM(FactReturns[RefundAmount])
+
+// WHAT: Count of returned items
+// WHY: "How many items are coming back?" (logistics impact)
+// WHEN: Operations, warehouse planning
+Total Returns = 
+    COUNTROWS(FactReturns)
+
+// WHAT: Returns as % of total orders
+// WHY: "Is our return rate acceptable?" (target: < 5%)
+// WHEN: Executive KPI, product quality meetings
+// POWER BI: KPI Card with red/green threshold at 5%
+Return Rate % = 
+    DIVIDE([Total Returns], [Total Orders], 0)
+
+// WHAT: Average days between purchase and return
+// WHY: "How quickly do customers return?" (indicates impulse vs quality issue)
+// WHEN: Returns analysis deep-dive
+Avg Days to Return = 
+    AVERAGE(FactReturns[DaysToReturn])
+
+
+// =============================================================================
+// SECTION 8: INVENTORY ANALYTICS (Inventory Dashboard)
+// =============================================================================
+
+// WHAT: Total items currently in stock (latest snapshot)
+// WHY: "What's our current inventory investment?" (capital tied up)
+// WHEN: Daily inventory review, supply chain meeting
+// NOTE: Semi-additive — use LASTNONBLANK for time, SUM for products/stores
+Total Stock on Hand = 
+    CALCULATE(
+        SUM(FactInventory[QuantityOnHand]),
+        LASTNONBLANK(DimDate[FullDate], COUNTROWS(FactInventory))
+    )
+
+// WHAT: Monetary value of inventory (Qty × Unit Cost)
+// WHY: "How much MONEY is sitting in our warehouses?" (working capital)
+// WHEN: Finance review, cash flow planning
+Inventory Value = 
+    CALCULATE(
+        SUM(FactInventory[InventoryValue]),
+        LASTNONBLANK(DimDate[FullDate], COUNTROWS(FactInventory))
+    )
+
+// WHAT: How many times inventory was sold and replaced in a year
+// WHY: "How FAST does our stock move?" (target: 8x+/year)
+// WHEN: Supply chain KPI, category management
+// INTERVIEW: "What's inventory turnover?" — finance/retail basic question
+Inventory Turnover = 
+    DIVIDE([Total COGS], [Inventory Value], 0)
+
+// WHAT: Average days before stock runs out
+// WHY: "How many DAYS of stock do we have?" (target: < 45 days)
+// WHEN: Reorder planning, stockout prevention
+Days of Inventory = 
+    DIVIDE(365, [Inventory Turnover], 0)
+
+// WHAT: Count of products below reorder point
+// WHY: "How many items need to be REORDERED now?" (action alert)
+// WHEN: Daily operations dashboard, procurement trigger
+// POWER BI: Red KPI card with alert icon
+Low Stock Items = 
+    CALCULATE(
+        COUNTROWS(FactInventory),
+        FactInventory[IsLowStock] = TRUE(),
+        LASTNONBLANK(DimDate[FullDate], COUNTROWS(FactInventory))
+    )
+
+// WHAT: Count of products with zero stock
+// WHY: "How many items can we NOT sell right now?" (lost revenue!)
+// WHEN: Daily morning review — URGENT action items
+// POWER BI: Red card with drill-through to product list
+Out of Stock Items = 
+    CALCULATE(
+        COUNTROWS(FactInventory),
+        FactInventory[IsOutOfStock] = TRUE(),
+        LASTNONBLANK(DimDate[FullDate], COUNTROWS(FactInventory))
+    )
+
+
+// =============================================================================
+// SECTION 9: DYNAMIC/CONDITIONAL MEASURES (Advanced — Senior BI roles)
+// =============================================================================
+
+// WHAT: Shows different title based on active slicer selection
+// WHY: Professional UX — chart title changes with user selection
+// WHEN: Every chart title in production dashboards
+// POWER BI: Use as chart Title (fx button → select this measure)
+Dynamic Title Revenue = 
+    VAR SelectedRegion = SELECTEDVALUE(DimRegion[RegionName], "All Regions")
+    VAR SelectedYear = SELECTEDVALUE(DimDate[Year], "All Years")
+    RETURN
+        "Revenue: " & SelectedRegion & " | " & SelectedYear
+
+// WHAT: KPI status icon based on target comparison
+// WHY: Instant visual indicator — green/amber/red
+// WHEN: KPI Cards, conditional formatting
+// POWER BI: Use in Conditional Formatting → Icons
+KPI Status Revenue = 
+    VAR Actual = [Revenue YoY Growth %]
+    RETURN
+        SWITCH(
+            TRUE(),
+            Actual >= 0.08, "● Above Target",    -- Green (8%+ growth)
+            Actual >= 0.04, "◐ Near Target",     -- Amber (4-8% growth)
+            "○ Below Target"                      -- Red (< 4% growth)
+        )
+
+
+// =============================================================================
+// SECTION 10: SHIPPING & DELIVERY (Shipping Dashboard)
+// =============================================================================
+
+// WHAT: Average days from ship to delivery
+// WHY: "How long do customers WAIT?" (experience metric)
+// WHEN: Shipping dashboard, carrier performance review
+Avg Delivery Days = 
+    AVERAGE(FactSales[Quantity]) // Placeholder — actual would use Shipping fact
+
+
+// =============================================================================
+// END OF CORE MEASURES
+// =============================================================================
+// TOTAL MEASURES IN THIS FILE: 45+
+// 
+// REMAINING MEASURES (in separate files):
+//   02_Advanced_DAX_Measures.dax — Ranking, Pareto, ABC, Forecasting
+//   03_Field_Parameters.dax — Dynamic dimension/measure switching
+//   04_Calculation_Groups.dax — Time intelligence calculation groups
+//
+// HOW TO ADD TO POWER BI:
+//   1. Open Power BI Desktop with RetailDW model
+//   2. Select "FactSales" table in Fields pane
+//   3. Click "New Measure" 
+//   4. Paste any formula above
+//   5. Press Enter → Measure appears in model
+//   6. Drag to a visual → See the result!
+//
+// PRO TIP: Create a "Measures" table (empty table) to organize all measures
+//   Modeling tab → New Table → Measures = ROW("x", BLANK())
+//   Then move all measures to this table for clean organization
+// =============================================================================
