@@ -222,7 +222,10 @@ BEGIN
         CAST(StoreID AS INT),
         CAST(HireDate AS DATE),
         CAST(Salary AS INT),
-        TRY_CAST(ManagerID AS INT)  -- NULL for top-level managers (valid)
+        -- ManagerID arrives as a float-formatted string (e.g. '5.0') because the
+        -- source column is nullable. NULLIF maps '' -> NULL (TRY_CAST('' AS FLOAT)
+        -- would give 0), then FLOAT->INT turns '5.0' -> 5. NULL = top-level manager.
+        TRY_CAST(TRY_CAST(NULLIF(LTRIM(RTRIM(ManagerID)), '') AS FLOAT) AS INT)  -- NULL for top-level managers (valid)
     FROM landing.Employees
     WHERE EmployeeID IS NOT NULL
       AND TRY_CAST(HireDate AS DATE) IS NOT NULL
@@ -308,8 +311,13 @@ BEGIN
             CAST(OrderID AS INT) AS OrderID,
             CAST(CustomerID AS INT) AS CustomerID,
             CAST(OrderDate AS DATE) AS OrderDate,
-            TRY_CAST(StoreID AS INT) AS StoreID,
-            TRY_CAST(EmployeeID AS INT) AS EmployeeID,
+            -- StoreID/EmployeeID are float-formatted strings ('48.0') because they
+            -- are nullable at source (NULL for e-commerce). NULLIF maps the empty
+            -- string to NULL (note: TRY_CAST('' AS FLOAT) would give 0, not NULL),
+            -- then FLOAT->INT turns '48.0' -> 48. Result: real IDs for store orders,
+            -- NULL for e-commerce (the staging contract).
+            TRY_CAST(TRY_CAST(NULLIF(LTRIM(RTRIM(StoreID)), '') AS FLOAT) AS INT) AS StoreID,
+            TRY_CAST(TRY_CAST(NULLIF(LTRIM(RTRIM(EmployeeID)), '') AS FLOAT) AS INT) AS EmployeeID,
             LTRIM(RTRIM(Channel)) AS Channel,
             LTRIM(RTRIM(Status)) AS Status,
             ROW_NUMBER() OVER (
