@@ -1,0 +1,534 @@
+// =============================================================================
+// ShopStar Retail — RetailDW Power BI Semantic Model
+// FILE 5 of 5: Advanced Analytics Measures  (20 measures)
+// =============================================================================
+// Author:   Amit Jaiswal  |  Role: Senior BI Engineer
+// Phase:     Phase 7 — Advanced DAX
+// Depends on: Files 1-2 ([Total Revenue], [Gross Profit], [Total Orders])
+//
+// THEMES IN THIS FILE (the "senior" DAX that impresses interviewers):
+//   • RANKING         -> RANKX, TOPN
+//   • PARETO / ABC    -> cumulative % and A/B/C classification
+//   • COMPARISON      -> % of total, index vs average
+//   • FORECASTING     -> simple linear trend, seasonality, CAGR
+//   • DYNAMIC UX      -> Field Parameters, dynamic subtitles, sparklines
+//
+// FIELD PARAMETERS (measures 16-17):
+//   Create these via Modeling > New Parameter > Fields in Power BI Desktop.
+//   That wizard AUTO-GENERATES a calculated table. The code shown here is the
+//   generated pattern so you understand and can hand-tune it.
+// =============================================================================
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Product Revenue Rank
+// KPI: Product performance ranking
+// BUSINESS QUESTION: "Where does each product rank by revenue?"
+// WHAT: Ranks products by [Total Revenue], 1 = best seller.
+// WHY: Instantly surfaces heroes and laggards for assortment decisions.
+// WHEN: Merchandising reviews; Top/Bottom tables.
+// TARGET: n/a (ranking)
+// POWER BI VISUAL: Matrix / Table (rank column)
+// DASHBOARD: 3-Profitability, 2-Sales Performance
+// DAX CONCEPT: RANKX + ALL to define the ranking universe
+// INTERVIEW: "Why ALL(DimProduct)?" -> without removing the product filter, each
+//            row would rank against only itself and return 1. ALL widens the
+//            comparison set to every product.
+// FORMULA EXPLANATION:
+//   RANKX iterates ALL products, evaluates [Total Revenue] for each, and
+//   returns the current product's position; DENSE avoids rank gaps on ties.
+// ═══════════════════════════════════════════════════════════
+Product Revenue Rank =
+RANKX ( ALL ( DimProduct[ProductName] ), [Total Revenue], , DESC, DENSE )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Top N Products Revenue
+// KPI: Concentration of sales
+// BUSINESS QUESTION: "How much revenue comes from the top N products?"
+// WHAT: Revenue from the top N products, where N is set by a numeric parameter.
+// WHY: Quantifies dependence on a few SKUs (assortment risk).
+// WHEN: Assortment risk reviews.
+// TARGET: monitor
+// POWER BI VISUAL: KPI Card driven by a What-If parameter slicer
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: TOPN + SUMX + What-If parameter (SELECTEDVALUE)
+// INTERVIEW: "What-If parameter" -> Modeling > New Parameter creates a
+//            disconnected table + a harvesting measure read via SELECTEDVALUE.
+// FORMULA EXPLANATION:
+//   N is harvested from the 'Top N Value' parameter (default 10). TOPN keeps the
+//   N highest-revenue products; SUMX totals their revenue.
+// ═══════════════════════════════════════════════════════════
+Top N Products Revenue =
+VAR N = SELECTEDVALUE ( 'Top N Parameter'[Top N Value], 10 )
+RETURN
+    SUMX (
+        TOPN ( N, VALUES ( DimProduct[ProductName] ), [Total Revenue], DESC ),
+        [Total Revenue]
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Bottom N Products Revenue
+// KPI: Underperformer identification
+// BUSINESS QUESTION: "How little do our worst N products contribute?"
+// WHAT: Revenue from the N lowest-revenue products.
+// WHY: Candidates for delisting to free shelf/working capital.
+// WHEN: Range-review / delisting decisions.
+// TARGET: prune
+// POWER BI VISUAL: KPI Card / Bottom N table
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: TOPN with ASC + SUMX
+// INTERVIEW: "TOPN ascending" -> passing ASC turns 'top' into 'bottom'.
+// FORMULA EXPLANATION:
+//   Same as Top N but TOPN sorts ASC to grab the weakest products, then SUMX
+//   totals them.
+// ═══════════════════════════════════════════════════════════
+Bottom N Products Revenue =
+VAR N = SELECTEDVALUE ( 'Top N Parameter'[Top N Value], 10 )
+RETURN
+    SUMX (
+        TOPN ( N, VALUES ( DimProduct[ProductName] ), [Total Revenue], ASC ),
+        [Total Revenue]
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Rank within Category
+// KPI: Intra-category performance
+// BUSINESS QUESTION: "Within its own category, how does a product rank?"
+// WHAT: Ranks each product by revenue but only against products in the SAME
+//       category.
+// WHY: Fair comparison — a small category's best seller matters locally.
+// WHEN: Category management.
+// TARGET: n/a
+// POWER BI VISUAL: Matrix grouped by Category
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: RANKX + ALLEXCEPT (keep category, remove product)
+// INTERVIEW: "ALLEXCEPT is key" -> it removes all product filters EXCEPT the
+//            category, so ranking resets within each category.
+// FORMULA EXPLANATION:
+//   ALLEXCEPT keeps the CategoryName filter while clearing product filters;
+//   RANKX then ranks products inside that category only.
+// ═══════════════════════════════════════════════════════════
+Rank within Category =
+RANKX (
+    CALCULATETABLE ( VALUES ( DimProduct[ProductName] ), ALLEXCEPT ( DimProduct, DimProduct[CategoryName] ) ),
+    [Total Revenue],
+    ,
+    DESC,
+    DENSE
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Cumulative Revenue %
+// KPI: Pareto analysis (running share)
+// BUSINESS QUESTION: "What cumulative % of revenue do the top products reach?"
+// WHAT: Running share of revenue when products are ordered best-to-worst.
+// WHY: The backbone of Pareto (80/20) and ABC classification.
+// WHEN: Assortment rationalization.
+// TARGET: n/a (diagnostic)
+// POWER BI VISUAL: Pareto (line) over a sorted product bar chart
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: running total via rank comparison + ALLSELECTED
+// INTERVIEW: "Cumulative % pattern" -> for each product, sum revenue of all
+//            products ranked at or above it, divided by grand total.
+// FORMULA EXPLANATION:
+//   CurrentRank = this product's revenue rank. RunningRevenue sums revenue of
+//   all products whose rank <= CurrentRank. Grand total ignores product filter.
+//   The ratio is the cumulative share.
+// ═══════════════════════════════════════════════════════════
+Cumulative Revenue % =
+VAR CurrentRank = [Product Revenue Rank]
+VAR RunningRevenue =
+    CALCULATE (
+        [Total Revenue],
+        FILTER (
+            ALLSELECTED ( DimProduct[ProductName] ),
+            [Product Revenue Rank] <= CurrentRank
+        )
+    )
+VAR GrandTotal = CALCULATE ( [Total Revenue], ALLSELECTED ( DimProduct[ProductName] ) )
+RETURN
+    DIVIDE ( RunningRevenue, GrandTotal )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: ABC Classification
+// KPI: Inventory/assortment ABC segmentation
+// BUSINESS QUESTION: "Is this product an A, B, or C contributor?"
+// WHAT: Labels each product A (top ~80% of revenue), B (next ~15%), or C (last
+//       ~5%) using the cumulative revenue share.
+// WHY: Focuses management attention and stock policy on the vital few (A).
+// WHEN: Assortment and inventory policy setting.
+// TARGET: n/a (segmentation)
+// POWER BI VISUAL: Slicer / Bar colored by class
+// DASHBOARD: 3-Profitability, 5-Inventory & Supply Chain
+// DAX CONCEPT: SWITCH over cumulative %
+// INTERVIEW: "ABC thresholds are conventions" -> commonly 80/95/100; state your
+//            cutoffs explicitly.
+// FORMULA EXPLANATION:
+//   Reads [Cumulative Revenue %]; products up to 80% are A, up to 95% are B,
+//   the remainder are C.
+// ═══════════════════════════════════════════════════════════
+ABC Classification =
+VAR CumulativePct = [Cumulative Revenue %]
+RETURN
+    SWITCH (
+        TRUE (),
+        CumulativePct <= 0.80, "A",
+        CumulativePct <= 0.95, "B",
+        "C"
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: A-Class Product Count
+// KPI: Vital-few sizing
+// BUSINESS QUESTION: "How many products drive the bulk of revenue?"
+// WHAT: Counts products classified as 'A'.
+// WHY: If a tiny set of SKUs = 80% of revenue, protect their availability.
+// WHEN: Assortment risk reviews.
+// TARGET: monitor concentration
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: COUNTX + FILTER over a classification measure
+// INTERVIEW: "Counting by a measure-based class" -> iterate products, evaluate
+//            the class, and count matches.
+// FORMULA EXPLANATION:
+//   COUNTX iterates products, keeping those whose [ABC Classification] = "A".
+// ═══════════════════════════════════════════════════════════
+A-Class Product Count =
+COUNTROWS (
+    FILTER ( VALUES ( DimProduct[ProductName] ), [ABC Classification] = "A" )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Pareto Line
+// KPI: Pareto reference (cumulative % as a plotted line)
+// BUSINESS QUESTION: "Where does the 80/20 line cross our product ranking?"
+// WHAT: Same cumulative share, named for direct use as the Pareto chart line.
+// WHY: Report-field clarity — a line series literally called 'Pareto Line'.
+// WHEN: Pareto visuals.
+// TARGET: n/a
+// POWER BI VISUAL: Line on a combo (bars = revenue, line = this)
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: measure reuse
+// INTERVIEW: "Naming for visuals" -> a friendly alias improves report legends.
+// FORMULA EXPLANATION: Alias of [Cumulative Revenue %] for the Pareto line.
+// ═══════════════════════════════════════════════════════════
+Pareto Line =
+[Cumulative Revenue %]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Selected vs Prior Period
+// KPI: Flexible period comparison
+// BUSINESS QUESTION: "How does the selected period compare to the one before?"
+// WHAT: Difference between current revenue and the immediately prior period of
+//       the same length.
+// WHY: One measure adapts to whatever date range the user slices.
+// WHEN: Ad-hoc analysis; comparison cards.
+// TARGET: positive
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: DATEADD by dynamic period length
+// INTERVIEW: "Dynamic prior period" -> shift the entire selected date range back
+//            by its own length using PARALLELPERIOD/DATEADD.
+// FORMULA EXPLANATION:
+//   Prior = revenue over the selected dates shifted back by one period of the
+//   same day-count (DATEADD by -1 of the detected grain). Result = current -
+//   prior. Here we use a month-length shift as the common default.
+// ═══════════════════════════════════════════════════════════
+Selected vs Prior Period =
+VAR CurrentValue = [Total Revenue]
+VAR PriorValue =
+    CALCULATE ( [Total Revenue], DATEADD ( DimDate[FullDate], -1, MONTH ) )
+RETURN
+    CurrentValue - PriorValue
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: % of Grand Total
+// KPI: Contribution share
+// BUSINESS QUESTION: "What share of the overall total is this row?"
+// WHAT: Row revenue divided by the grand total (ignoring row filters).
+// WHY: Turns absolute numbers into comparable shares across any dimension.
+// WHEN: Mix analysis on any breakdown.
+// TARGET: n/a
+// POWER BI VISUAL: Matrix (% column) / 100% stacked bar
+// DASHBOARD: multiple
+// DAX CONCEPT: ALLSELECTED to compute the visual's total
+// INTERVIEW: "ALL vs ALLSELECTED" -> ALLSELECTED respects OUTER slicers so the
+//            denominator is the visible total, not the whole model.
+// FORMULA EXPLANATION:
+//   Denominator = revenue with the current visual's row filters removed but
+//   external slicers kept; DIVIDE gives the share.
+// ═══════════════════════════════════════════════════════════
+% of Grand Total =
+DIVIDE ( [Total Revenue], CALCULATE ( [Total Revenue], ALLSELECTED () ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: % Contribution by Category
+// KPI: Category mix
+// BUSINESS QUESTION: "What share of revenue does each category contribute?"
+// WHAT: Category revenue divided by the all-category total.
+// WHY: Reveals category dependence and mix shifts over time.
+// WHEN: Category strategy.
+// TARGET: n/a (mix)
+// POWER BI VISUAL: 100% stacked bar / Matrix
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: ALL on the category to build the denominator
+// INTERVIEW: "Scope the denominator to categories" -> remove only the category
+//            filter so the total spans all categories in context.
+// FORMULA EXPLANATION:
+//   Denominator = revenue over ALL categories (ALL on CategoryName); numerator
+//   is the current category's revenue; DIVIDE yields its share.
+// ═══════════════════════════════════════════════════════════
+% Contribution by Category =
+DIVIDE (
+    [Total Revenue],
+    CALCULATE ( [Total Revenue], ALL ( DimCategory[CategoryName] ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Index vs Company Average
+// KPI: Performance indexing (100 = average)
+// BUSINESS QUESTION: "Is this item above or below the company average?"
+// WHAT: Row revenue divided by the average revenue per item, scaled to 100.
+// WHY: An index reads instantly — 120 means 20% above average.
+// WHEN: Benchmarking stores/products/regions.
+// TARGET: > 100
+// POWER BI VISUAL: Matrix (index column with color scale)
+// DASHBOARD: 6-Regional & Store Performance
+// DAX CONCEPT: AVERAGEX over the peer set + scaling
+// INTERVIEW: "Indexing normalizes scale" -> makes big and small entities
+//            comparable on the same 100-centered axis.
+// FORMULA EXPLANATION:
+//   PeerAverage = average revenue across all items (ALLSELECTED); index =
+//   currentRevenue / peerAverage × 100.
+// ═══════════════════════════════════════════════════════════
+Index vs Company Average =
+VAR CurrentValue = [Total Revenue]
+VAR PeerAverage =
+    AVERAGEX ( ALLSELECTED ( DimStore[StoreName] ), [Total Revenue] )
+RETURN
+    DIVIDE ( CurrentValue, PeerAverage ) * 100
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Forecast (3M Linear)
+// KPI: Forward revenue projection
+// BUSINESS QUESTION: "Given the recent trend, what might next months look like?"
+// WHAT: A simple linear projection using the average month-over-month change of
+//       the trailing 3 months added to the latest month.
+// WHY: A transparent, explainable baseline forecast (not a black box).
+// WHEN: Light-weight planning; sanity-checking vendor forecasts.
+// TARGET: n/a (projection)
+// POWER BI VISUAL: Line Chart (forecast segment)
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: trailing averages + arithmetic projection
+// INTERVIEW: "DAX isn't a stats engine" -> for real forecasting use Power BI's
+//            built-in analytics or a model; DAX linear trend is a heuristic.
+// FORMULA EXPLANATION:
+//   LatestRevenue = current month; AvgChange = mean MoM delta over 3 months;
+//   forecast = latest + AvgChange (extend by multiplying for further months).
+// ═══════════════════════════════════════════════════════════
+Revenue Forecast =
+VAR LatestRevenue = [Total Revenue]
+VAR Avg3M = [Revenue 3M Moving Average]
+VAR Trend = LatestRevenue - Avg3M
+RETURN
+    LatestRevenue + Trend
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Seasonal Index per Month
+// KPI: Seasonality profile
+// BUSINESS QUESTION: "Which months run hot or cold versus the yearly average?"
+// WHAT: A month's average revenue divided by the overall monthly average (1.0 =
+//       average month; 1.3 = 30% above).
+// WHY: Guides staffing, inventory, and promo timing around seasonal peaks.
+// WHEN: Annual planning.
+// TARGET: n/a (profile)
+// POWER BI VISUAL: Column by Month
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: AVERAGEX over months + ALL to get the baseline
+// INTERVIEW: "Seasonal index definition" -> period average / grand period
+//            average; centered on 1.0.
+// FORMULA EXPLANATION:
+//   ThisMonthAvg = average revenue for the month in context; OverallAvg =
+//   average across all months (ALL on MonthNumber). Index = ratio.
+// ═══════════════════════════════════════════════════════════
+Seasonal Index per Month =
+VAR ThisMonthRevenue = [Total Revenue]
+VAR OverallMonthlyAvg =
+    CALCULATE (
+        AVERAGEX ( VALUES ( DimDate[YearMonth] ), [Total Revenue] ),
+        ALL ( DimDate[MonthNumber], DimDate[MonthName] )
+    )
+RETURN
+    DIVIDE ( ThisMonthRevenue, OverallMonthlyAvg )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Growth Rate CAGR
+// KPI: Compound annual growth rate
+// BUSINESS QUESTION: "What's our smoothed annual growth over the full span?"
+// WHAT: CAGR = (EndValue / StartValue)^(1/years) - 1.
+// WHY: One clean number describing multi-year growth, immune to single-year
+//      noise; loved by executives and investors.
+// WHEN: Long-range strategy decks.
+// TARGET: > 8% (aligns with YoY growth ambition)
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: first/last period values + POWER for the nth root
+// INTERVIEW: "CAGR formula" -> (end/start)^(1/n) - 1; know it cold.
+// FORMULA EXPLANATION:
+//   FirstYearRevenue and LastYearRevenue are captured at the span endpoints;
+//   Years is their gap; POWER computes the nth root; subtract 1 for the rate.
+// ═══════════════════════════════════════════════════════════
+Growth Rate CAGR =
+VAR FirstYear = MINX ( ALLSELECTED ( DimDate[Year] ), DimDate[Year] )
+VAR LastYear = MAXX ( ALLSELECTED ( DimDate[Year] ), DimDate[Year] )
+VAR StartValue = CALCULATE ( [Total Revenue], DimDate[Year] = FirstYear )
+VAR EndValue = CALCULATE ( [Total Revenue], DimDate[Year] = LastYear )
+VAR Years = LastYear - FirstYear
+RETURN
+    IF ( Years > 0 && StartValue > 0, POWER ( DIVIDE ( EndValue, StartValue ), DIVIDE ( 1, Years ) ) - 1 )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Measure Selector (Field Parameter)
+// KPI: Dynamic metric switching (UX)
+// BUSINESS QUESTION: "Let me flip one chart between Revenue, Profit, Orders."
+// WHAT: A Field Parameter table lets users pick which MEASURE a visual shows.
+// WHY: One chart replaces three; cleaner reports, fewer visuals to maintain.
+// WHEN: Interactive exploration pages.
+// TARGET: n/a (UX)
+// POWER BI VISUAL: Slicer (parameter) + any chart bound to it
+// DASHBOARD: all interactive pages
+// DAX CONCEPT: Field Parameter (calculated table generated by the wizard)
+// INTERVIEW: "Field Parameters vs SWITCH" -> Field Parameters are the modern,
+//            no-code way to swap fields/measures; SWITCH+SELECTEDVALUE was the
+//            classic manual approach.
+// FORMULA EXPLANATION (this is a CALCULATED TABLE, not a measure — create via
+//   Modeling > New Parameter > Fields, then tick Revenue/Profit/Orders):
+//   Each row = { display name, the field reference (NAMEOF), sort order }.
+// ═══════════════════════════════════════════════════════════
+Measure Selector =
+{
+    ( "Revenue", NAMEOF ( [Total Revenue] ), 0 ),
+    ( "Gross Profit", NAMEOF ( [Gross Profit] ), 1 ),
+    ( "Orders", NAMEOF ( [Total Orders] ), 2 )
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Dimension Selector (Field Parameter)
+// KPI: Dynamic dimension switching (UX)
+// BUSINESS QUESTION: "Let me pivot the same chart by Category, Region, or Store."
+// WHAT: A Field Parameter table swapping which COLUMN groups a visual.
+// WHY: One reusable chart the user re-pivots on demand.
+// WHEN: Interactive exploration pages.
+// TARGET: n/a (UX)
+// POWER BI VISUAL: Slicer (parameter) + chart axis bound to it
+// DASHBOARD: all interactive pages
+// DAX CONCEPT: Field Parameter (calculated table)
+// INTERVIEW: "Swapping dimensions" -> Field Parameters can switch grouping
+//            columns, not just measures.
+// FORMULA EXPLANATION (calculated table — create via the New Parameter wizard):
+//   Each row references a grouping column with NAMEOF and a sort index.
+// ═══════════════════════════════════════════════════════════
+Dimension Selector =
+{
+    ( "Category", NAMEOF ( DimCategory[CategoryName] ), 0 ),
+    ( "Region", NAMEOF ( DimRegion[RegionName] ), 1 ),
+    ( "Store", NAMEOF ( DimStore[StoreName] ), 2 )
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Dynamic Subtitle
+// KPI: Self-documenting visuals (UX)
+// BUSINESS QUESTION: "What filters are currently applied to this page?"
+// WHAT: Builds a sentence summarizing the active year/region/segment selections.
+// WHY: Prevents misreading exported visuals stripped of their slicers.
+// WHEN: Bound to a card or a visual subtitle.
+// TARGET: n/a (UX)
+// POWER BI VISUAL: Card / dynamic subtitle
+// DASHBOARD: all
+// DAX CONCEPT: SELECTEDVALUE + string building
+// INTERVIEW: "Context echo" -> surfacing filter state builds user trust.
+// FORMULA EXPLANATION:
+//   SELECTEDVALUE reads each slicer (with 'All' fallbacks); the parts are
+//   concatenated into a human-readable subtitle.
+// ═══════════════════════════════════════════════════════════
+Dynamic Subtitle =
+VAR Yr = SELECTEDVALUE ( DimDate[Year], "All Years" )
+VAR Rgn = SELECTEDVALUE ( DimRegion[RegionName], "All Regions" )
+VAR Seg = SELECTEDVALUE ( DimCustomer[Segment], "All Segments" )
+RETURN
+    "Showing: " & Yr & "  |  " & Rgn & "  |  " & Seg
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Conditional Format Value
+// KPI: Color-rule driver (UX)
+// BUSINESS QUESTION: "Color this cell by how it compares to target."
+// WHAT: Returns a numeric code (1/2/3) mapping to Red/Amber/Green for use in a
+//       'Field value' conditional-formatting rule.
+// WHY: Separating the color logic into a measure keeps formatting consistent and
+//      centrally maintained.
+// WHEN: Matrix/table conditional formatting (Background color > Field value).
+// TARGET: n/a (driver)
+// POWER BI VISUAL: Matrix / Table cell colors
+// DASHBOARD: all scorecards
+// DAX CONCEPT: SWITCH returning a sortable code
+// INTERVIEW: "Numeric vs hex for CF" -> you can return a hex string ("#2ECC71")
+//            directly; a numeric code is handy for rules and legends.
+// FORMULA EXPLANATION:
+//   Compares [Gross Margin %] to the 35% target and returns 3 (green), 2
+//   (amber) or 1 (red). Point the cell's background rule at this measure.
+// ═══════════════════════════════════════════════════════════
+Conditional Format Value =
+VAR MarginValue = [Gross Margin %]
+RETURN
+    SWITCH (
+        TRUE (),
+        MarginValue >= 0.35, "#2ECC71",
+        MarginValue >= 0.30, "#F1C40F",
+        "#E74C3C"
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Sparkline Measure
+// KPI: Inline trend (UX)
+// BUSINESS QUESTION: "Show a tiny 12-month trend inside a table cell."
+// WHAT: Concatenates recent monthly revenue values into a compact text trend
+//       (or use as the basis for a native Power BI sparkline).
+// WHY: Micro-trends beside a KPI give instant context without a separate chart.
+// WHEN: KPI tables/matrices.
+// TARGET: n/a (UX)
+// POWER BI VISUAL: Table column (native sparkline or text)
+// DASHBOARD: scorecards
+// DAX CONCEPT: CONCATENATEX iterating months
+// INTERVIEW: "CONCATENATEX" -> iterates a table and joins an expression per row
+//            with a delimiter; great for inline lists/trends.
+// FORMULA EXPLANATION:
+//   Over the trailing 12 months, CONCATENATEX evaluates revenue (in $K) per
+//   month and joins them with a separator to form a readable mini-trend.
+// ═══════════════════════════════════════════════════════════
+Sparkline Measure =
+CONCATENATEX (
+    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -12, MONTH ),
+    FORMAT ( DIVIDE ( [Total Revenue], 1000 ), "0" ),
+    " ▸ ",
+    DimDate[FullDate],
+    ASC
+)

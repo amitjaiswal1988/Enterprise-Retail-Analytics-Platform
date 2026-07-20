@@ -152,8 +152,8 @@ python -m pytest tests/test_data_quality.py -v
 | 4 | Data Cleaning (ETL) | ✅ Complete |
 | 5 | Data Warehouse (Star Schema) | ✅ Complete |
 | 5.5 | Analytics Views + SQL Practice + Power BI Guide | ✅ Complete |
-| 6 | Power BI Data Model | Pending |
-| 7 | Advanced DAX (100+ measures) | Pending |
+| 6 | Power BI Data Model | ✅ Complete |
+| 7 | Advanced DAX (100+ measures) | ✅ Complete |
 | 8 | Dashboard Development (9 dashboards) | Pending |
 | 9 | Power BI Service Deployment | Pending |
 | 10 | Security (Row-Level Security) | Pending |
@@ -171,7 +171,10 @@ python -m pytest tests/test_data_quality.py -v
 - 100 documented, DB-validated SQL interview-practice queries
 - Power BI Implementation Guide (connection → modeling → RLS → tuning)
 - Deterministic synthetic dataset generator with quality defects
-- 100+ Advanced DAX measures with documentation
+- **100 Advanced DAX measures** across 5 documented files (Revenue, Profitability, Customer, Inventory/Returns, Advanced) — every measure carries WHAT/WHY/WHEN/TARGET/visual/interview notes
+- **Complete Power Query (M) ETL layer** with query-folding & incremental-refresh guidance
+- **Power BI Service deployment guide** (workspaces, gateway, scheduled refresh, RLS, apps, alerts, pipelines)
+- **Data Modeling Best Practices** (star schema, cardinality, hierarchies, measure table pattern)
 - 9 Professional Power BI dashboards
 - Row-Level Security (Static + Dynamic)
 - Incremental Refresh configuration

@@ -1,0 +1,353 @@
+// =============================================================================
+// ShopStar Retail — RetailDW Power BI Semantic Model
+// FILE 2 of 5: Profitability Measures  (15 measures)
+// =============================================================================
+// Author:   Amit Jaiswal  |  Role: Senior BI Engineer
+// Phase:     Phase 7 — Advanced DAX
+// Depends on: File 1 ([Total Revenue], [Total Orders], [Revenue YTD], etc.)
+//
+// EXACT COLUMNS USED (verified vs 04_Fact_Tables.sql / 03_Dimension_Tables.sql):
+//   FactSales[LineCOGS]        -> Cost of Goods Sold (additive)
+//   FactSales[GrossProfit]     -> LineTotal - LineCOGS (pre-computed in ETL)
+//   FactSales[DiscountAmount]  -> Discount dollars given
+//   FactSales[LineTotal]       -> Revenue after discount
+//   FactReturns[RefundAmount]  -> Money refunded to customers
+//   DimProduct[MarginPercent]  -> Per-product margin % (PERSISTED column)
+//   DimProduct[ProductSK]      -> Product grain for margin counts
+//   DimCategory[CategoryName]  -> For category-level margin
+//
+// GLOSSARY (say these correctly in interviews):
+//   COGS  = what the goods cost us.
+//   Gross Profit = Revenue - COGS (before operating expenses).
+//   Gross Margin % = Gross Profit / Revenue (efficiency ratio, 0-100%).
+//   Net Revenue = Revenue net of discounts AND returns (what we truly keep).
+// =============================================================================
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total COGS
+// KPI: Gross Profit Margin (building block)
+// BUSINESS QUESTION: "What did the goods we sold cost us?"
+// WHAT: Sums LineCOGS across all visible order lines.
+// WHY: COGS is the largest cost line in retail; margin can't exist without it.
+// WHEN: Every profitability review.
+// TARGET: n/a (cost input)
+// POWER BI VISUAL: KPI Card / Waterfall (Revenue -> COGS -> GP)
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: SUM
+// INTERVIEW: "Why store COGS in the fact?" -> price/cost can change over time;
+//            snapshotting cost at sale time keeps historical margins accurate.
+// FORMULA EXPLANATION: Straight additive SUM of the LineCOGS measure column.
+// ═══════════════════════════════════════════════════════════
+Total COGS =
+SUM ( FactSales[LineCOGS] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Gross Profit
+// KPI: Gross Profit Margin (building block)
+// BUSINESS QUESTION: "How much did we make after product cost?"
+// WHAT: Revenue minus COGS. (We recompute from parts for clarity, though the
+//       ETL also pre-stores GrossProfit per line.)
+// WHY: The absolute profit dollars before operating expenses.
+// WHEN: Profitability reviews; category P&Ls.
+// TARGET: n/a (dollars; ratio is below)
+// POWER BI VISUAL: KPI Card / Waterfall
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: measure arithmetic (reuse)
+// INTERVIEW: "Recompute vs use stored GrossProfit?" -> both valid; reusing
+//            measures keeps ONE definition and avoids drift.
+// FORMULA EXPLANATION:
+//   Subtract the [Total COGS] measure from the [Total Revenue] measure; both
+//   evaluate in the same filter context so the difference is coherent.
+// ═══════════════════════════════════════════════════════════
+Gross Profit =
+[Total Revenue] - [Total COGS]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Gross Margin %
+// KPI: Gross Profit Margin (TARGET > 35%)
+// BUSINESS QUESTION: "How efficiently do we turn sales into profit?"
+// WHAT: Gross Profit divided by Revenue, expressed as a percentage.
+// WHY: The core efficiency KPI; comparable across products, stores, and time.
+// WHEN: Daily exec scorecard; category management.
+// TARGET: > 35%
+// POWER BI VISUAL: KPI Card (RAG colored) / Gauge
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: DIVIDE + measure reuse
+// INTERVIEW: "Margin % vs markup %" -> margin = profit/REVENUE; markup =
+//            profit/COST. They are NOT the same number.
+// FORMULA EXPLANATION:
+//   DIVIDE([Gross Profit],[Total Revenue]) -> ratio; format as % in the model.
+//   DIVIDE returns BLANK if revenue is 0 (empty selection), avoiding errors.
+// ═══════════════════════════════════════════════════════════
+Gross Margin % =
+DIVIDE ( [Gross Profit], [Total Revenue] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Gross Profit YoY Growth %
+// KPI: Profitability growth
+// BUSINESS QUESTION: "Is our profit growing year over year?"
+// WHAT: (This year's GP - last year's GP) / last year's GP.
+// WHY: Revenue can grow while profit shrinks (discount-led growth). This
+//      confirms growth is PROFITABLE.
+// WHEN: Quarterly board reviews.
+// TARGET: positive, ideally > revenue growth
+// POWER BI VISUAL: KPI Card / Line Chart
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: SAMEPERIODLASTYEAR + DIVIDE + VAR
+// INTERVIEW: "Profit growth vs revenue growth" -> compare the two to detect
+//            margin erosion hidden inside top-line growth.
+// FORMULA EXPLANATION:
+//   Compute prior-year GP via SAMEPERIODLASTYEAR, then the standard growth
+//   ratio with a safe DIVIDE.
+// ═══════════════════════════════════════════════════════════
+Gross Profit YoY Growth % =
+VAR CurrentGP = [Gross Profit]
+VAR PriorYearGP =
+    CALCULATE ( [Gross Profit], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+RETURN
+    DIVIDE ( CurrentGP - PriorYearGP, PriorYearGP )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Discount Amount
+// KPI: Discount control (protects margin)
+// BUSINESS QUESTION: "How much did we give away in discounts?"
+// WHAT: Sums DiscountAmount across all order lines.
+// WHY: Discounts directly erode margin; leadership caps them per category.
+// WHEN: Promotion post-mortems; margin reviews.
+// TARGET: managed (see Discount Rate %)
+// POWER BI VISUAL: KPI Card / Column by Category
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: SUM
+// INTERVIEW: "Where does discount live?" -> stored per line in the fact at sale
+//            time so historical promo impact is auditable.
+// FORMULA EXPLANATION: Additive SUM of DiscountAmount in the current context.
+// ═══════════════════════════════════════════════════════════
+Total Discount Amount =
+SUM ( FactSales[DiscountAmount] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Discount Rate %
+// KPI: Discount control
+// BUSINESS QUESTION: "What % of gross sales did we discount away?"
+// WHAT: Discount dollars divided by GROSS sales (revenue + discount given back).
+// WHY: Normalizes discounting so a small store and a mega-store compare fairly.
+// WHEN: Weekly promo governance.
+// TARGET: kept low & stable
+// POWER BI VISUAL: KPI Card / Line Chart
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: DIVIDE + measure arithmetic
+// INTERVIEW: "Denominator choice matters" -> LineTotal is already NET of
+//            discount, so gross = LineTotal + DiscountAmount for a true rate.
+// FORMULA EXPLANATION:
+//   Gross = [Total Revenue] + [Total Discount Amount]; rate = discount / gross.
+// ═══════════════════════════════════════════════════════════
+Discount Rate % =
+DIVIDE ( [Total Discount Amount], [Total Revenue] + [Total Discount Amount] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Net Revenue
+// KPI: Net Profit Margin (building block)
+// BUSINESS QUESTION: "After discounts AND returns, what did we really keep?"
+// WHAT: Revenue minus refunds (LineTotal is already net of discount).
+// WHY: The truest 'money kept' figure; feeds net-margin analysis.
+// WHEN: Finance month-end close.
+// TARGET: n/a (dollars)
+// POWER BI VISUAL: KPI Card / Waterfall
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: measure arithmetic across TWO fact tables
+// INTERVIEW: "Combining facts" -> each measure aggregates its own fact; DAX
+//            adds the scalar results in a shared date context.
+// FORMULA EXPLANATION:
+//   [Total Revenue] (net of discount) minus [Total Refund Amount] (from
+//   FactReturns) yields revenue truly retained.
+// ═══════════════════════════════════════════════════════════
+Net Revenue =
+[Total Revenue] - [Total Refund Amount]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue After Returns
+// KPI: Net Profit Margin (building block; alias of Net Revenue for clarity)
+// BUSINESS QUESTION: "What's revenue once we subtract customer refunds?"
+// WHAT: Revenue minus refund dollars — an explicitly named 'after returns' view.
+// WHY: Some dashboards want a label that literally says 'after returns'.
+// WHEN: Returns impact analysis.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: measure arithmetic
+// INTERVIEW: "Naming for the audience" -> same math, business-friendly name.
+// FORMULA EXPLANATION: Identical to Net Revenue; kept separate for readable
+//                      report field names on the Returns dashboard.
+// ═══════════════════════════════════════════════════════════
+Revenue After Returns =
+[Total Revenue] - [Total Refund Amount]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Profit Per Order
+// KPI: Profitability per transaction
+// BUSINESS QUESTION: "How much profit does an average order generate?"
+// WHAT: Gross Profit divided by the number of distinct orders.
+// WHY: Complements AOV — a big basket that's all discounted low-margin goods
+//      can have high AOV but low profit per order.
+// WHEN: Basket / promo profitability reviews.
+// TARGET: n/a (trend up)
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: DIVIDE + measure reuse
+// INTERVIEW: "Pair value with profit" -> always test AOV against profit/order.
+// FORMULA EXPLANATION: [Gross Profit] / [Total Orders], safely divided.
+// ═══════════════════════════════════════════════════════════
+Profit Per Order =
+DIVIDE ( [Gross Profit], [Total Orders] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Profit Per Customer
+// KPI: Customer profitability (relates to CLV)
+// BUSINESS QUESTION: "How much profit does each customer generate?"
+// WHAT: Gross Profit divided by distinct customers.
+// WHY: Not all revenue is equal — some segments buy low-margin goods; this
+//      reveals which customers are truly profitable.
+// WHEN: Segment strategy; loyalty investment decisions.
+// TARGET: n/a (compare segments)
+// POWER BI VISUAL: Bar by Segment
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DIVIDE + DISTINCTCOUNT
+// INTERVIEW: "Profit vs revenue per customer" -> guards against chasing
+//            unprofitable revenue.
+// FORMULA EXPLANATION: [Gross Profit] / distinct FactSales[CustomerSK].
+// ═══════════════════════════════════════════════════════════
+Profit Per Customer =
+DIVIDE ( [Gross Profit], DISTINCTCOUNT ( FactSales[CustomerSK] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Margin % by Category
+// KPI: Gross Profit Margin (by category, for conditional formatting)
+// BUSINESS QUESTION: "Which categories are margin-rich vs margin-poor?"
+// WHAT: Gross Margin % evaluated within each category row of a matrix.
+// WHY: Drives assortment and pricing decisions; powers RAG color rules.
+// WHEN: Category management reviews.
+// TARGET: > 35% per category
+// POWER BI VISUAL: Matrix with conditional formatting (data bars/color scale)
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: filter context (measure naturally responds to the row category)
+// INTERVIEW: "Do I need to add a category filter?" -> No; a matrix places each
+//            CategoryName into filter context automatically. This measure is
+//            simply [Gross Margin %] surfaced with a category-specific name.
+// FORMULA EXPLANATION:
+//   Reuses [Gross Margin %]; when placed on a CategoryName axis, the ratio is
+//   computed per category by the surrounding filter context.
+// ═══════════════════════════════════════════════════════════
+Margin % by Category =
+[Gross Margin %]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: High Margin Products Count
+// KPI: Assortment quality
+// BUSINESS QUESTION: "How many of our products are high-margin (>40%)?"
+// WHAT: Counts products whose DimProduct[MarginPercent] exceeds 40.
+// WHY: A healthy catalog leans on high-margin heroes; tracks assortment mix.
+// WHEN: Merchandising planning.
+// TARGET: grow over time
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: CALCULATE + FILTER over a dimension
+// INTERVIEW: "MarginPercent is stored as 0-100" -> compare to 40, not 0.40
+//            (the SQL PERSISTED column multiplies by 100).
+// FORMULA EXPLANATION:
+//   FILTER scans DimProduct keeping rows where MarginPercent > 40; COUNTROWS
+//   (via CALCULATE + DISTINCTCOUNT) returns how many products qualify.
+// ═══════════════════════════════════════════════════════════
+High Margin Products Count =
+CALCULATE (
+    DISTINCTCOUNT ( DimProduct[ProductSK] ),
+    FILTER ( DimProduct, DimProduct[MarginPercent] > 40 )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Low Margin Products Count
+// KPI: Assortment risk
+// BUSINESS QUESTION: "How many products are dangerously low-margin (<20%)?"
+// WHAT: Counts products whose DimProduct[MarginPercent] is below 20.
+// WHY: Flags SKUs for price review, renegotiation, or delisting.
+// WHEN: Margin cleanup initiatives.
+// TARGET: shrink over time
+// POWER BI VISUAL: KPI Card (amber/red)
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: CALCULATE + FILTER
+// INTERVIEW: "Symmetry with high-margin" -> same pattern, opposite threshold.
+// FORMULA EXPLANATION:
+//   FILTER keeps DimProduct rows with MarginPercent < 20; counts distinct SKUs.
+// ═══════════════════════════════════════════════════════════
+Low Margin Products Count =
+CALCULATE (
+    DISTINCTCOUNT ( DimProduct[ProductSK] ),
+    FILTER ( DimProduct, DimProduct[MarginPercent] < 20 )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Margin YTD
+// KPI: Gross Profit Margin (year-to-date)
+// BUSINESS QUESTION: "What's our blended margin so far this year?"
+// WHAT: Gross Margin % computed over the year-to-date date set.
+// WHY: Smooths monthly promo swings into an annual efficiency read.
+// WHEN: Executive scorecard.
+// TARGET: > 35% YTD
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 3-Profitability
+// DAX CONCEPT: DIVIDE of two YTD-scoped measures
+// INTERVIEW: "Ratio of YTDs, not YTD of a ratio" -> you must aggregate the
+//            numerator and denominator to date, THEN divide. Averaging monthly
+//            margin % would be mathematically wrong.
+// FORMULA EXPLANATION:
+//   Compute GP YTD and Revenue YTD independently with DATESYTD, then DIVIDE.
+// ═══════════════════════════════════════════════════════════
+Margin YTD =
+VAR GrossProfitYTD =
+    CALCULATE ( [Gross Profit], DATESYTD ( DimDate[FullDate] ) )
+VAR RevenueYTD =
+    CALCULATE ( [Total Revenue], DATESYTD ( DimDate[FullDate] ) )
+RETURN
+    DIVIDE ( GrossProfitYTD, RevenueYTD )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: KPI Status Margin
+// KPI: Gross Profit Margin RAG indicator (TARGET > 35%)
+// BUSINESS QUESTION: "At a glance, is margin healthy?"
+// WHAT: Returns a text status — "🟢 Green", "🟡 Amber", or "🔴 Red" — based on
+//       how [Gross Margin %] compares to the 35% target.
+// WHY: Executives scan color, not decimals; RAG turns a number into a decision.
+// WHEN: Executive scorecard cards and matrices.
+// TARGET: Green >= 35%, Amber 30-35%, Red < 30%
+// POWER BI VISUAL: KPI Card / Matrix icon column (use for conditional format)
+// DASHBOARD: 3-Profitability, 1-Executive Overview
+// DAX CONCEPT: SWITCH(TRUE()) branching
+// INTERVIEW: "SWITCH(TRUE()) pattern" -> a clean IF/ELSEIF ladder; each branch
+//            is a boolean test evaluated top-down, returning the first TRUE.
+// FORMULA EXPLANATION:
+//   Store [Gross Margin %] once in a VAR; SWITCH tests it against thresholds and
+//   returns the matching RAG label. Drive card font/background color from this.
+// ═══════════════════════════════════════════════════════════
+KPI Status Margin =
+VAR MarginValue = [Gross Margin %]
+RETURN
+    SWITCH (
+        TRUE (),
+        MarginValue >= 0.35, "🟢 Green",
+        MarginValue >= 0.30, "🟡 Amber",
+        "🔴 Red"
+    )

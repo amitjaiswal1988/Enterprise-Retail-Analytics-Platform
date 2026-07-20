@@ -387,6 +387,18 @@ git push origin main
 
 ---
 
+### Prompt P-026: Complete Power BI Implementation (Phase 6-7)
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 3 — Phase 6-7 (Power BI Data Model + Advanced DAX) |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📊 Data / 📝 Docs |
+| **Prompt** | "As Senior BI Engineer, create the COMPLETE Power BI implementation for RetailDW — 100 DAX measures (5 files), Power Query M code, Power BI Service guide, Data Modeling best practices; every line commented WHAT/WHY/WHEN; all 15 BRD KPIs with RAG vs targets." |
+| **Result** | ✅ Success — 100 DAX measures (25+15+20+20+20) matched to exact `warehouse.*` columns; `PowerQuery_M_Code_Complete.md`; `PowerBI_Service_Complete_Guide.md`; `Data_Modeling_Best_Practices.md`; README + Phase Summary updated. |
+
+---
+
 ## Template for Future Prompts
 
 ```markdown

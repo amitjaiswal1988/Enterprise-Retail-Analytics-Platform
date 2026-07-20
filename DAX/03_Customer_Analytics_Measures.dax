@@ -1,0 +1,547 @@
+// =============================================================================
+// ShopStar Retail — RetailDW Power BI Semantic Model
+// FILE 3 of 5: Customer Analytics Measures  (20 measures)
+// =============================================================================
+// Author:   Amit Jaiswal  |  Role: Senior BI Engineer
+// Phase:     Phase 7 — Advanced DAX
+// Depends on: File 1 ([Total Revenue], [Total Customers], [Total Orders])
+//
+// EXACT COLUMNS USED:
+//   FactSales[CustomerSK]   -> FK to DimCustomer (purchasing customers)
+//   FactSales[OrderID]      -> distinct orders (purchase frequency)
+//   DimCustomer[CustomerSK] -> customer grain
+//   DimCustomer[Segment]    -> 'Enterprise' / 'SMB' / 'Consumer'
+//   DimCustomer[Region]     -> customer region
+//   DimCustomer[JoinDate]   -> registration date (tenure, cohorts)
+//   DimDate[FullDate], DimDate[YearMonth]
+//
+// KEY IDEA — "customer as-of a date":
+//   Retention/churn measures compare a customer's activity in DIFFERENT time
+//   windows. We do this by shifting the date filter with CALCULATE + time
+//   intelligence, and by comparing sets of CustomerSK with functions like
+//   EXCEPT / INTERSECT. Read each FORMULA EXPLANATION for the logic.
+// =============================================================================
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Customers (Customer Analytics view)
+// KPI: Total Customers (denominator for retention/CLV)
+// BUSINESS QUESTION: "How many unique customers purchased in this context?"
+// WHAT: Distinct count of purchasing CustomerSK.
+// WHY: Base of the customer funnel; every rate below divides by this.
+// WHEN: Every customer dashboard.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DISTINCTCOUNT
+// INTERVIEW: "Active vs registered" -> fact-side count = active buyers.
+// FORMULA EXPLANATION: DISTINCTCOUNT of the fact CustomerSK in context.
+// (Defined again here so File 3 is self-contained; identical to File 1.)
+// ═══════════════════════════════════════════════════════════
+Active Customers =
+DISTINCTCOUNT ( FactSales[CustomerSK] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: New Customers
+// KPI: Customer Acquisition
+// BUSINESS QUESTION: "How many customers made their FIRST-EVER purchase now?"
+// WHAT: Counts customers whose first purchase date falls inside the current
+//       period (i.e. they had zero purchases before this window).
+// WHY: Separates true acquisition from repeat activity — vital for growth.
+// WHEN: Marketing acquisition reviews.
+// TARGET: grow steadily
+// POWER BI VISUAL: Column Chart by Month
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: CALCULATE + FILTER + earlier-period test with MIN dates
+// INTERVIEW: "First purchase detection" -> compare a customer's first order
+//            date to the current window's start.
+// FORMULA EXPLANATION:
+//   For each customer visible now, we check that they had NO sales strictly
+//   before the current period's first date. FILTER keeps only such customers
+//   and we count them. CALCULATE with ALL removes the outer date filter so we
+//   can look at their full history.
+// ═══════════════════════════════════════════════════════════
+New Customers =
+VAR PeriodStart = MIN ( DimDate[FullDate] )
+RETURN
+    COUNTROWS (
+        FILTER (
+            VALUES ( FactSales[CustomerSK] ),
+            VAR FirstEverPurchase =
+                CALCULATE (
+                    MIN ( DimDate[FullDate] ),
+                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+                )
+            RETURN FirstEverPurchase >= PeriodStart
+        )
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Returning Customers
+// KPI: Repeat Purchase Rate (building block)
+// BUSINESS QUESTION: "How many buyers had also purchased before this period?"
+// WHAT: Customers active now whose first-ever purchase predates this period.
+// WHY: The flip side of New Customers; measures the loyal base.
+// WHEN: Loyalty and retention reviews.
+// TARGET: grow as base matures
+// POWER BI VISUAL: Column Chart / stacked with New Customers
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: CALCULATE + FILTER + ALLEXCEPT
+// INTERVIEW: "New + Returning = Active" -> the two partition active customers.
+// FORMULA EXPLANATION:
+//   Same as New Customers but keeps customers whose first purchase happened
+//   BEFORE the current period start (they existed earlier).
+// ═══════════════════════════════════════════════════════════
+Returning Customers =
+VAR PeriodStart = MIN ( DimDate[FullDate] )
+RETURN
+    COUNTROWS (
+        FILTER (
+            VALUES ( FactSales[CustomerSK] ),
+            VAR FirstEverPurchase =
+                CALCULATE (
+                    MIN ( DimDate[FullDate] ),
+                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+                )
+            RETURN FirstEverPurchase < PeriodStart
+        )
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Lost / Churned Customers
+// KPI: Customer Retention (inverse signal)
+// BUSINESS QUESTION: "How many customers have gone quiet (90+ days no buy)?"
+// WHAT: Counts customers whose most recent purchase is more than 90 days
+//       before the latest date in context.
+// WHY: Early churn warning drives win-back campaigns before it's too late.
+// WHEN: Retention operations; CRM triggers.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card / Trend
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: CALCULATE + FILTER + date arithmetic
+// INTERVIEW: "Recency threshold" -> churn is defined by a business rule (here
+//            90 days of inactivity); make the window a parameter in production.
+// FORMULA EXPLANATION:
+//   AsOfDate = latest date in context. For each customer, find their last
+//   purchase across ALL history; if it's older than AsOfDate - 90 days, they
+//   count as churned.
+// ═══════════════════════════════════════════════════════════
+Lost / Churned Customers =
+VAR AsOfDate = MAX ( DimDate[FullDate] )
+VAR ChurnCutoff = AsOfDate - 90
+RETURN
+    COUNTROWS (
+        FILTER (
+            VALUES ( FactSales[CustomerSK] ),
+            VAR LastPurchase =
+                CALCULATE (
+                    MAX ( DimDate[FullDate] ),
+                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+                )
+            RETURN LastPurchase < ChurnCutoff
+        )
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customer Retention Rate %
+// KPI: Customer Retention Rate (TARGET > 60%)
+// BUSINESS QUESTION: "What share of last year's customers bought again this year?"
+// WHAT: Customers active in BOTH the prior year and the current year, divided
+//       by customers active in the prior year.
+// WHY: Retention is cheaper than acquisition; the board watches it closely.
+// WHEN: Quarterly leadership reviews.
+// TARGET: > 60%
+// POWER BI VISUAL: KPI Card (RAG) / Line trend
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: INTERSECT of customer sets across time windows
+// INTERVIEW: "Set-based retention" -> build the prior-year customer set and the
+//            current set, INTERSECT for the retained, divide by prior set size.
+// FORMULA EXPLANATION:
+//   PriorCustomers = distinct CustomerSK last year; RetainedCustomers = those
+//   who ALSO appear this year (INTERSECT). Rate = retained / prior.
+// ═══════════════════════════════════════════════════════════
+Customer Retention Rate % =
+VAR CurrentCustomers = VALUES ( FactSales[CustomerSK] )
+VAR PriorCustomers =
+    CALCULATE (
+        VALUES ( FactSales[CustomerSK] ),
+        SAMEPERIODLASTYEAR ( DimDate[FullDate] )
+    )
+VAR RetainedCustomers = INTERSECT ( PriorCustomers, CurrentCustomers )
+RETURN
+    DIVIDE ( COUNTROWS ( RetainedCustomers ), COUNTROWS ( PriorCustomers ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Repeat Purchase Rate %
+// KPI: Repeat Purchase Rate (TARGET > 40%)
+// BUSINESS QUESTION: "What share of customers bought more than once?"
+// WHAT: Customers with 2+ distinct orders divided by all active customers.
+// WHY: Repeat buying signals product-market fit and loyalty health.
+// WHEN: Loyalty program reviews.
+// TARGET: > 40%
+// POWER BI VISUAL: KPI Card (RAG)
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: FILTER + CALCULATE(DISTINCTCOUNT orders per customer)
+// INTERVIEW: "Repeat vs retention" -> repeat = >1 order EVER in context;
+//            retention = active across two SEPARATE periods.
+// FORMULA EXPLANATION:
+//   For each customer, count their distinct orders; keep those with >= 2;
+//   divide that count by total active customers.
+// ═══════════════════════════════════════════════════════════
+Repeat Purchase Rate % =
+VAR RepeatCustomers =
+    COUNTROWS (
+        FILTER (
+            VALUES ( FactSales[CustomerSK] ),
+            CALCULATE ( DISTINCTCOUNT ( FactSales[OrderID] ) ) >= 2
+        )
+    )
+RETURN
+    DIVIDE ( RepeatCustomers, [Active Customers] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customer Lifetime Value
+// KPI: Customer Lifetime Value (TARGET > $1,200)
+// BUSINESS QUESTION: "What is an average customer worth over their lifetime?"
+// WHAT: Average revenue per customer × average purchase frequency × average
+//       lifespan (years). A simplified, transparent CLV model.
+// WHY: Sets the ceiling on acquisition spend (CAC must be < CLV).
+// WHEN: Marketing budget and unit-economics reviews.
+// TARGET: > $1,200
+// POWER BI VISUAL: KPI Card (RAG)
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: measure composition + AVERAGEX for tenure
+// INTERVIEW: "CLV models vary" -> explain assumptions; here CLV = AvgRevenue/
+//            customer × orders/customer-year × avg tenure years.
+// FORMULA EXPLANATION:
+//   AvgRevenuePerCustomer = [Revenue Per Customer]. Frequency = orders per
+//   customer. AvgLifespan = mean CustomerTenureYears (min 1 to avoid 0). The
+//   product estimates lifetime value per customer.
+// ═══════════════════════════════════════════════════════════
+Customer Lifetime Value =
+VAR AvgRevenuePerCustomer = [Revenue Per Customer]
+VAR AvgFrequency = DIVIDE ( [Total Orders], [Active Customers] )
+VAR AvgLifespanYears =
+    MAX ( AVERAGEX ( VALUES ( DimCustomer[CustomerSK] ), DimCustomer[CustomerTenureYears] ), 1 )
+RETURN
+    AvgRevenuePerCustomer * AvgFrequency * AvgLifespanYears
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Average Purchase Frequency
+// KPI: Engagement (CLV building block)
+// BUSINESS QUESTION: "How many orders does a typical customer place?"
+// WHAT: Distinct orders divided by distinct customers.
+// WHY: Frequency is a core CLV lever; campaigns aim to lift it.
+// WHEN: Loyalty and lifecycle marketing reviews.
+// TARGET: trend up
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DIVIDE + measure reuse
+// INTERVIEW: "Frequency drives CLV" -> small frequency gains compound.
+// FORMULA EXPLANATION: [Total Orders] / [Active Customers], safe divide.
+// ═══════════════════════════════════════════════════════════
+Average Purchase Frequency =
+DIVIDE ( [Total Orders], [Active Customers] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Days Since Last Purchase
+// KPI: Recency (RFM building block)
+// BUSINESS QUESTION: "How long since this customer last bought?"
+// WHAT: Days between the customer's last purchase and the latest date in view.
+// WHY: Recency is the strongest predictor of next purchase; drives win-back.
+// WHEN: CRM segmentation; churn triggers.
+// TARGET: minimize
+// POWER BI VISUAL: Table (per customer) / distribution histogram
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DATEDIFF + MAX dates in context
+// INTERVIEW: "Evaluate per customer" -> place on a customer axis, or wrap in an
+//            iterator for an aggregate; here it responds to the row's customer.
+// FORMULA EXPLANATION:
+//   LastPurchase = MAX FullDate for the customer in context; AsOfDate = latest
+//   date overall; DATEDIFF returns the day gap.
+// ═══════════════════════════════════════════════════════════
+Days Since Last Purchase =
+VAR AsOfDate = CALCULATE ( MAX ( DimDate[FullDate] ), ALL ( DimDate ) )
+VAR LastPurchase = MAX ( DimDate[FullDate] )
+RETURN
+    DATEDIFF ( LastPurchase, AsOfDate, DAY )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customer Acquisition by Month
+// KPI: Customer Acquisition trend
+// BUSINESS QUESTION: "How many customers did we acquire each month?"
+// WHAT: New Customers, designed to sit on a month axis to show an acquisition
+//       curve.
+// WHY: Visualizes growth momentum and campaign spikes over time.
+// WHEN: Marketing MBR.
+// TARGET: rising
+// POWER BI VISUAL: Column / Line by Month
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: measure reuse in a time axis
+// INTERVIEW: "One measure, many visuals" -> the same [New Customers] logic
+//            re-buckets by whatever date grain the axis uses.
+// FORMULA EXPLANATION: Reuses [New Customers]; the monthly axis provides the
+//                      per-month filter context.
+// ═══════════════════════════════════════════════════════════
+Customer Acquisition by Month =
+[New Customers]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customer Segment Distribution
+// KPI: Segment mix (Enterprise / SMB / Consumer)
+// BUSINESS QUESTION: "How is our customer base split across segments?"
+// WHAT: Distinct customers per DimCustomer[Segment].
+// WHY: Reveals reliance on any one segment; informs go-to-market focus.
+// WHEN: Strategy reviews.
+// TARGET: n/a (mix)
+// POWER BI VISUAL: Donut / Bar by Segment
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DISTINCTCOUNT responding to Segment filter context
+// INTERVIEW: "Dimension-driven split" -> put Segment on the axis; the measure
+//            recomputes per segment automatically.
+// FORMULA EXPLANATION: DISTINCTCOUNT of customers; the Segment axis slices it.
+// ═══════════════════════════════════════════════════════════
+Customer Segment Distribution =
+DISTINCTCOUNT ( DimCustomer[CustomerSK] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue by Segment
+// KPI: Segment revenue contribution
+// BUSINESS QUESTION: "Which segment brings in the most revenue?"
+// WHAT: Total revenue evaluated within each customer segment.
+// WHY: Distinguishes headcount mix from money mix (few Enterprise accounts can
+//      dominate revenue).
+// WHEN: Account strategy; sales coverage planning.
+// TARGET: n/a (mix)
+// POWER BI VISUAL: Bar by Segment / Matrix
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: measure reuse across a related dimension
+// INTERVIEW: "Cross-table filtering" -> DimCustomer[Segment] filters FactSales
+//            through the 1-to-many relationship.
+// FORMULA EXPLANATION: Reuses [Total Revenue]; the Segment axis filters sales
+//                      via the customer relationship.
+// ═══════════════════════════════════════════════════════════
+Revenue by Segment =
+[Total Revenue]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Top 10 Customers by Revenue
+// KPI: Key account concentration
+// BUSINESS QUESTION: "How much revenue do our top 10 customers generate?"
+// WHAT: Sum of revenue from the 10 highest-revenue customers.
+// WHY: Concentration risk — if a handful of accounts dominate, churn is costly.
+// WHEN: Account management; risk reviews.
+// TARGET: monitor concentration
+// POWER BI VISUAL: KPI Card / Bar (Top N visual)
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: TOPN + SUMX
+// INTERVIEW: "TOPN returns a TABLE" -> you then iterate it (SUMX) to aggregate
+//            the selected rows.
+// FORMULA EXPLANATION:
+//   TOPN ranks all customers by their revenue and keeps the top 10 as a table;
+//   SUMX walks those 10 rows and totals each one's revenue.
+// ═══════════════════════════════════════════════════════════
+Top 10 Customers by Revenue =
+SUMX (
+    TOPN ( 10, VALUES ( DimCustomer[CustomerSK] ), [Total Revenue], DESC ),
+    [Total Revenue]
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customer Cohort (First Purchase Month)
+// KPI: Cohort analysis (grouping key)
+// BUSINESS QUESTION: "Which month did a customer first buy (their cohort)?"
+// WHAT: Returns the YearMonth of each customer's first-ever purchase.
+// WHY: Cohorts let us compare how different intakes retain over time.
+// WHEN: Retention/cohort studies.
+// TARGET: n/a (grouping)
+// POWER BI VISUAL: Matrix rows (cohort) x columns (months since)
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: CALCULATE + MIN date + ALLEXCEPT
+// INTERVIEW: "Assigning a cohort" -> a customer's cohort is fixed by their
+//            first transaction, independent of later activity.
+// FORMULA EXPLANATION:
+//   For the customer in context, find the earliest FullDate across all history
+//   (ALLEXCEPT keeps only the customer), then read its YearMonth label.
+// ═══════════════════════════════════════════════════════════
+Customer Cohort =
+VAR FirstPurchaseDate =
+    CALCULATE ( MIN ( DimDate[FullDate] ), ALLEXCEPT ( FactSales, FactSales[CustomerSK] ) )
+RETURN
+    CALCULATE (
+        SELECTEDVALUE ( DimDate[YearMonth] ),
+        DimDate[FullDate] = FirstPurchaseDate
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Cohort Retention Rate
+// KPI: Cohort retention (month 1, 2, 3 ...)
+// BUSINESS QUESTION: "What % of a cohort is still active N months later?"
+// WHAT: For customers in context (a cohort), the share still purchasing in the
+//       currently displayed month relative to the cohort's original size.
+// WHY: Reveals how durable each intake is — the classic retention triangle.
+// WHEN: Retention deep-dives.
+// TARGET: flatten the decay curve
+// POWER BI VISUAL: Cohort heatmap matrix
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: set logic + ALL to fix the cohort denominator
+// INTERVIEW: "Cohort denominator is fixed" -> divide by the ORIGINAL cohort
+//            size, not the current-month customers.
+// FORMULA EXPLANATION:
+//   ActiveThisPeriod = distinct customers buying in the visible month;
+//   CohortSize = distinct customers of the cohort ignoring the month filter
+//   (ALL on the date period). Rate = active / cohort size.
+// ═══════════════════════════════════════════════════════════
+Cohort Retention Rate =
+VAR ActiveThisPeriod = DISTINCTCOUNT ( FactSales[CustomerSK] )
+VAR CohortSize =
+    CALCULATE ( DISTINCTCOUNT ( FactSales[CustomerSK] ), ALL ( DimDate ) )
+RETURN
+    DIVIDE ( ActiveThisPeriod, CohortSize )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: RFM Score
+// KPI: Customer value scoring (Recency, Frequency, Monetary)
+// BUSINESS QUESTION: "How do we rank a customer on recency, frequency, spend?"
+// WHAT: A 3-digit score (e.g. 555) combining Recency (1-5), Frequency (1-5),
+//       and Monetary (1-5) sub-scores for the customer in context.
+// WHY: RFM is the workhorse of retail segmentation and targeting.
+// WHEN: CRM campaign design.
+// TARGET: n/a (segmentation)
+// POWER BI VISUAL: Table / scatter; feeds RFM Segment Name
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: SWITCH banding + measure reuse
+// INTERVIEW: "Scoring bands" -> convert continuous metrics into 1-5 quantile-
+//            like buckets so they combine cleanly.
+// FORMULA EXPLANATION:
+//   Recency uses [Days Since Last Purchase] (fewer days = higher score).
+//   Frequency uses order count; Monetary uses revenue. Each is banded 1-5 via
+//   SWITCH, then concatenated into an RFM code.
+// ═══════════════════════════════════════════════════════════
+RFM Score =
+VAR Recency = [Days Since Last Purchase]
+VAR Frequency = CALCULATE ( DISTINCTCOUNT ( FactSales[OrderID] ) )
+VAR Monetary = [Total Revenue]
+VAR RScore =
+    SWITCH ( TRUE (), Recency <= 30, 5, Recency <= 60, 4, Recency <= 120, 3, Recency <= 240, 2, 1 )
+VAR FScore =
+    SWITCH ( TRUE (), Frequency >= 10, 5, Frequency >= 6, 4, Frequency >= 3, 3, Frequency >= 2, 2, 1 )
+VAR MScore =
+    SWITCH ( TRUE (), Monetary >= 5000, 5, Monetary >= 2000, 4, Monetary >= 1000, 3, Monetary >= 500, 2, 1 )
+RETURN
+    RScore * 100 + FScore * 10 + MScore
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: RFM Segment Name
+// KPI: Customer segmentation label
+// BUSINESS QUESTION: "What plain-English segment is this customer in?"
+// WHAT: Maps the RFM sub-scores to friendly labels: Champions, Loyal, At Risk,
+//       Lost, etc.
+// WHY: Marketers act on names, not codes; drives campaign selection.
+// WHEN: Campaign targeting.
+// TARGET: n/a
+// POWER BI VISUAL: Slicer / Bar by segment
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: SWITCH(TRUE()) over decomposed R/F/M
+// INTERVIEW: "From score to strategy" -> segments translate scores into action
+//            (reward Champions, win back At Risk).
+// FORMULA EXPLANATION:
+//   Recompute R and combined FM strength, then SWITCH assigns a segment name
+//   based on typical RFM rules.
+// ═══════════════════════════════════════════════════════════
+RFM Segment Name =
+VAR RScore = INT ( [RFM Score] / 100 )
+VAR FScore = INT ( MOD ( [RFM Score], 100 ) / 10 )
+VAR MScore = MOD ( [RFM Score], 10 )
+RETURN
+    SWITCH (
+        TRUE (),
+        RScore >= 4 && FScore >= 4, "Champions",
+        RScore >= 3 && FScore >= 3, "Loyal",
+        RScore >= 4 && FScore <= 2, "New / Promising",
+        RScore = 3, "Needs Attention",
+        RScore = 2, "At Risk",
+        "Lost"
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Customers Per Region
+// KPI: Geographic distribution
+// BUSINESS QUESTION: "How are customers spread across regions?"
+// WHAT: Distinct customers per DimCustomer[Region].
+// WHY: Guides regional marketing spend and store expansion.
+// WHEN: Regional planning.
+// TARGET: n/a
+// POWER BI VISUAL: Map / Bar by Region
+// DASHBOARD: 6-Regional & Store Performance
+// DAX CONCEPT: DISTINCTCOUNT with region filter context
+// INTERVIEW: "Customer region vs store region" -> customers carry their OWN
+//            region (billing), distinct from where they shopped.
+// FORMULA EXPLANATION: DISTINCTCOUNT of customers, sliced by the Region axis.
+// ═══════════════════════════════════════════════════════════
+Customers Per Region =
+DISTINCTCOUNT ( DimCustomer[CustomerSK] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Average Customer Tenure (Years)
+// KPI: Base maturity
+// BUSINESS QUESTION: "On average, how long have customers been with us?"
+// WHAT: Average of DimCustomer[CustomerTenureYears] across customers in context.
+// WHY: Older bases retain better but grow slower; balances the portfolio view.
+// WHEN: Lifecycle strategy.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: AVERAGEX over the customer dimension
+// INTERVIEW: "AVERAGE column vs AVERAGEX" -> AVERAGEX makes the per-customer
+//            grain explicit and is robust if the column were an expression.
+// FORMULA EXPLANATION:
+//   AVERAGEX iterates DimCustomer rows in context and averages their tenure.
+// ═══════════════════════════════════════════════════════════
+Average Customer Tenure =
+AVERAGEX ( VALUES ( DimCustomer[CustomerSK] ), DimCustomer[CustomerTenureYears] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: KPI Status Retention
+// KPI: Customer Retention Rate RAG (TARGET > 60%)
+// BUSINESS QUESTION: "At a glance, is retention healthy?"
+// WHAT: RAG label comparing [Customer Retention Rate %] to the 60% target.
+// WHY: Turns a ratio into an instant red/amber/green decision signal.
+// WHEN: Executive customer scorecard.
+// TARGET: Green >= 60%, Amber 50-60%, Red < 50%
+// POWER BI VISUAL: KPI Card / conditional-format driver
+// DASHBOARD: 4-Customer Analytics, 1-Executive Overview
+// DAX CONCEPT: SWITCH(TRUE())
+// INTERVIEW: "Consistent RAG pattern" -> reusing one status pattern across KPIs
+//            keeps dashboards predictable for users.
+// FORMULA EXPLANATION:
+//   Store the retention rate in a VAR; SWITCH returns the RAG label per band.
+// ═══════════════════════════════════════════════════════════
+KPI Status Retention =
+VAR RetentionValue = [Customer Retention Rate %]
+RETURN
+    SWITCH (
+        TRUE (),
+        RetentionValue >= 0.60, "🟢 Green",
+        RetentionValue >= 0.50, "🟡 Amber",
+        "🔴 Red"
+    )

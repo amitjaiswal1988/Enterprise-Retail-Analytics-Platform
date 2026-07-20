@@ -147,14 +147,73 @@ Warehouse populated: DimDate 2557, DimRegion 5, DimCategory 26, DimSupplier 101,
 
 ---
 
-## Phases 6-14: Upcoming
+## Phase 6: Power BI Data Model ✅
+
+| Attribute | Details |
+|-----------|---------|
+| **Objective** | Shape the SQL Star Schema into a clean Power BI semantic model |
+| **Duration** | Day 3 |
+| **Key Output** | Power Query (M) ETL layer + data modeling best-practice guide |
+| **Status** | ✅ Complete |
+
+### What We Did
+1. Authored the complete **Power Query (M)** layer — one query per `warehouse.*`
+   table: connect, remove `_LoadedAt`, drop PII (`Email`), set explicit types,
+   mark `DimDate` as the date table
+2. Documented **query folding** (what folds, what breaks it, how to verify) and
+   **incremental refresh** (`RangeStart`/`RangeEnd` params + folding date filter)
+3. Wrote **Data Modeling Best Practices**: star schema wiring, 1:Many/Single
+   cardinality, cross-filter direction, hierarchies, display folders, the
+   `_Measures` table pattern, hidden keys, performance, composite & aggregation
+   models
+
+### Files Created
+- `Power BI/PowerQuery_M_Code_Complete.md` — full M ETL layer (commented)
+- `Documentation/Data_Modeling_Best_Practices.md` — modeling playbook
+
+---
+
+## Phase 7: Advanced DAX (100 Measures) ✅
+
+| Attribute | Details |
+|-----------|---------|
+| **Objective** | Implement all 15 BRD KPIs plus advanced analytics as DAX measures |
+| **Duration** | Day 3 |
+| **Key Output** | 100 documented DAX measures across 5 files |
+| **Status** | ✅ Complete |
+
+### What We Did
+1. `DAX/01_Revenue_And_Sales_Measures.dax` — **25** measures (revenue, AOV, YTD/
+   QTD/MTD, YoY/MoM, rolling & moving averages, channel split, dynamic title)
+2. `DAX/02_Profitability_Measures.dax` — **15** measures (COGS, gross profit &
+   margin, discounts, net revenue, margin RAG vs 35% target)
+3. `DAX/03_Customer_Analytics_Measures.dax` — **20** measures (retention, repeat
+   rate, CLV, RFM scoring & segments, cohorts, churn)
+4. `DAX/04_Inventory_Returns_Measures.dax` — **20** measures (semi-additive stock
+   via `LASTNONBLANK`, turnover, DIO, stockout & return rates, RAG statuses)
+5. `DAX/05_Advanced_Analytics_Measures.dax` — **20** measures (RANKX, TOPN, ABC/
+   Pareto, CAGR, seasonal index, Field Parameters, sparkline)
+6. Every measure carries a full header: WHAT / WHY / WHEN / TARGET / Power BI
+   visual / dashboard / DAX concept / interview tip / line-by-line explanation
+7. All measures reference the exact `warehouse.*` column names (verified against
+   `04_Fact_Tables.sql` and `03_Dimension_Tables.sql`) and the `Store` /
+   `E-commerce` channel values
+
+### Files Created
+- `DAX/01_..05_*.dax` — 100 measures total
+- `Documentation/PowerBI_Service_Complete_Guide.md` — Service deployment + RLS
+
+### Verified
+**100 measures** implementing all **15 BRD KPIs** with Red/Amber/Green status
+measures vs targets. Revenue definition centralized in `[Total Revenue]` and
+reused throughout for a single source of truth.
+
+---
+
+## Phases 8-14: Upcoming
 
 | Phase | Status | Depends On |
 |-------|--------|-----------|
-| 6a — Power BI Connection | Pending | Phase 5 |
-| 6b — Power Query (cleanup, types) | Pending | Phase 6a |
-| 6c — Data Modeling (star, hierarchies) | Pending | Phase 6b |
-| 7 — Advanced DAX (100+) | Pending | Phase 6c |
 | 8 — Dashboard Development (9) | Pending | Phase 7 |
 | 9 — Power BI Service Deploy | Pending | Phase 8 |
 | 10 — Row-Level Security | Pending | Phase 9 |

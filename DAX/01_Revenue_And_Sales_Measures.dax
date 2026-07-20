@@ -1,0 +1,582 @@
+// =============================================================================
+// ShopStar Retail — RetailDW Power BI Semantic Model
+// FILE 1 of 5: Revenue & Sales Measures  (25 measures)
+// =============================================================================
+// Author:   Amit Jaiswal  |  Role: Senior BI Engineer
+// Phase:     Phase 7 — Advanced DAX
+// Model:     Star Schema (warehouse.FactSales + Dim* tables)
+//
+// HOW TO USE THIS FILE
+//   1. In Power BI Desktop, create an EMPTY table called "_Measures"
+//      (Home > Enter Data > name it "_Measures" > Load). This is the
+//      "Measure Table" pattern so all measures live in one tidy folder.
+//   2. For each block below, click "New Measure" and paste the formula
+//      (the code AFTER the header comment, starting at the measure name).
+//   3. Set the Format String noted in each header (e.g. Currency, %).
+//
+// EXACT COLUMN NAMES USED (verified against 04_Fact_Tables.sql):
+//   FactSales[LineTotal]      -> Revenue after discount (additive)
+//   FactSales[LineCOGS]       -> Cost of Goods Sold
+//   FactSales[GrossProfit]    -> LineTotal - LineCOGS (pre-computed in ETL)
+//   FactSales[Quantity]       -> Units sold
+//   FactSales[DiscountAmount] -> Discount $ given
+//   FactSales[OrderID]        -> Degenerate dimension (order grouping)
+//   FactSales[Channel]        -> 'Store' or 'E-commerce'
+//   FactSales[CustomerSK]     -> FK to DimCustomer
+//   DimDate[FullDate]         -> The date column that powers Time Intelligence
+//   DimStore[StoreSK], DimEmployee[EmployeeSK], DimCustomer[CustomerSK]
+//
+// NOTE ON [Total Revenue] REUSE
+//   Every downstream measure references [Total Revenue] instead of repeating
+//   SUM(FactSales[LineTotal]). WHY: single source of truth — if the revenue
+//   definition ever changes (e.g. exclude a channel), we fix ONE measure and
+//   all 24 others update automatically. This is the #1 DAX best practice.
+// =============================================================================
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Revenue
+// KPI: Total Revenue ($2.5B target)
+// BUSINESS QUESTION: "How much money did we make?"
+// WHAT: Sums the LineTotal (post-discount revenue) of every order line.
+// WHY: Revenue is the single most-watched number in the company. Every
+//      other financial ratio (margin, AOV, growth) is built on top of it.
+// WHEN: Daily leadership standup, every dashboard header KPI card.
+// TARGET: $2.5B cumulative
+// POWER BI VISUAL: KPI Card (top-left of every page)
+// DASHBOARD: 1-Executive Overview, and referenced by all 9 dashboards
+// DAX CONCEPT: SUM (basic aggregation)
+// INTERVIEW: "What's the difference between a measure and a calculated column?"
+//            -> Measures evaluate in the current filter context at query time
+//               (no storage cost); columns compute row-by-row at refresh and
+//               consume memory. Revenue must be a MEASURE.
+// FORMULA EXPLANATION:
+//   SUM walks every visible row of FactSales (after slicers/filters apply)
+//   and adds up LineTotal. Filter context (a selected month, region, etc.)
+//   automatically narrows which rows are summed.
+// ═══════════════════════════════════════════════════════════
+Total Revenue =
+SUM ( FactSales[LineTotal] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Orders
+// KPI: (supports Average Order Value)
+// BUSINESS QUESTION: "How many distinct orders did customers place?"
+// WHAT: Counts UNIQUE OrderID values (an order has many line items).
+// WHY: The fact grain is the line item, so a plain COUNT would overcount.
+//      DISTINCTCOUNT collapses the multiple lines of one basket into 1 order.
+// WHEN: Operations dashboard, and as the denominator for AOV.
+// TARGET: n/a (volume metric)
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: DISTINCTCOUNT
+// INTERVIEW: "Why not COUNT(OrderID)?" -> grain is line item; COUNT inflates.
+// FORMULA EXPLANATION:
+//   DISTINCTCOUNT scans FactSales[OrderID] in the current filter context and
+//   returns how many different order numbers exist — i.e. basket count.
+// ═══════════════════════════════════════════════════════════
+Total Orders =
+DISTINCTCOUNT ( FactSales[OrderID] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Quantity Sold
+// KPI: (supports volume / inventory turnover analysis)
+// BUSINESS QUESTION: "How many units did we move?"
+// WHAT: Sums the Quantity column across all visible order lines.
+// WHY: Revenue can rise on price alone; units tell you real demand volume.
+// WHEN: Merchandising / inventory planning reviews.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card / Column Chart
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: SUM
+// INTERVIEW: "Additive vs non-additive measures" -> Quantity is fully additive.
+// FORMULA EXPLANATION: Straight SUM of the additive Quantity measure column.
+// ═══════════════════════════════════════════════════════════
+Total Quantity Sold =
+SUM ( FactSales[Quantity] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Average Order Value
+// KPI: Average Order Value (target > $150)
+// BUSINESS QUESTION: "How much does a typical basket bring in?"
+// WHAT: Revenue divided by the number of distinct orders.
+// WHY: AOV shows basket health. Marketing raises it with bundles/upsells;
+//      a falling AOV warns of discount-driven, low-value baskets.
+// WHEN: Weekly commercial review; A/B test scorecards.
+// TARGET: > $150
+// POWER BI VISUAL: KPI Card with target line
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: DIVIDE (safe division)
+// INTERVIEW: "Why DIVIDE not '/'?" -> DIVIDE returns BLANK (or a supplied
+//            alternate) on divide-by-zero instead of an error.
+// FORMULA EXPLANATION:
+//   Numerator = [Total Revenue], Denominator = [Total Orders]. DIVIDE guards
+//   the case where a filter yields 0 orders (e.g. a store with no sales yet).
+// ═══════════════════════════════════════════════════════════
+Average Order Value =
+DIVIDE ( [Total Revenue], [Total Orders] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Per Customer
+// KPI: (supports Customer Lifetime Value)
+// BUSINESS QUESTION: "On average, how much is each customer worth in sales?"
+// WHAT: Total revenue divided by the count of distinct paying customers.
+// WHY: Feeds CLV thinking and measures monetization per person, not per order.
+// WHEN: Customer analytics review; segment comparisons.
+// TARGET: n/a (compare across segments)
+// POWER BI VISUAL: KPI Card / Bar by Segment
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DIVIDE + DISTINCTCOUNT
+// INTERVIEW: "Filter context" -> when placed on a Segment row, both numerator
+//            and denominator are automatically filtered to that segment.
+// FORMULA EXPLANATION:
+//   DISTINCTCOUNT on the FactSales[CustomerSK] counts only customers who
+//   actually purchased in context; DIVIDE spreads revenue across them.
+// ═══════════════════════════════════════════════════════════
+Revenue Per Customer =
+DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[CustomerSK] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Per Store
+// KPI: Revenue Per Store (target > $15M)
+// BUSINESS QUESTION: "How productive is each physical store?"
+// WHAT: Revenue divided by the number of stores that recorded sales.
+// WHY: Benchmarks store productivity; flags underperformers for action.
+// WHEN: Regional manager monthly business reviews.
+// TARGET: > $15M per store
+// POWER BI VISUAL: KPI Card / Map / Bar by Store
+// DASHBOARD: 6-Regional & Store Performance
+// DAX CONCEPT: DIVIDE + DISTINCTCOUNT over a dimension key
+// INTERVIEW: "Why count DimStore[StoreSK], not FactSales?" -> counting the
+//            dimension gives stores that TRANSACTED; using the -1 Unknown/Online
+//            member is naturally excluded by store slicers.
+// FORMULA EXPLANATION:
+//   We count distinct StoreSK values present in the filter context and divide
+//   revenue by that store count.
+// ═══════════════════════════════════════════════════════════
+Revenue Per Store =
+DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[StoreSK] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Sales Per Associate
+// KPI: Sales Per Associate (target > $500K / year)
+// BUSINESS QUESTION: "How much revenue does each sales associate generate?"
+// WHAT: Revenue divided by the count of distinct employees credited on sales.
+// WHY: Core retail productivity metric; informs staffing and incentives.
+// WHEN: HR + Store Ops quarterly performance reviews.
+// TARGET: > $500K per associate per year
+// POWER BI VISUAL: KPI Card / Bar by Employee
+// DASHBOARD: 7-Employee Performance
+// DAX CONCEPT: DIVIDE + DISTINCTCOUNT
+// INTERVIEW: "E-commerce rows carry EmployeeSK = -1" -> the Unknown associate
+//            is excluded once an employee slicer or 'store only' filter applies.
+// FORMULA EXPLANATION:
+//   Distinct EmployeeSK count in context becomes the denominator for revenue.
+// ═══════════════════════════════════════════════════════════
+Sales Per Associate =
+DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[EmployeeSK] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Customers
+// KPI: Total Customers (supports CLV, Retention)
+// BUSINESS QUESTION: "How many unique customers bought from us?"
+// WHAT: Distinct count of CustomerSK appearing in FactSales.
+// WHY: The active customer base — the denominator for most customer KPIs.
+// WHEN: Every customer dashboard; growth tracking.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 4-Customer Analytics
+// DAX CONCEPT: DISTINCTCOUNT
+// INTERVIEW: "Active vs total customers" -> counting from the FACT gives only
+//            customers who transacted (active); counting DimCustomer would give
+//            everyone who ever registered.
+// FORMULA EXPLANATION:
+//   DISTINCTCOUNT of the fact-side CustomerSK = purchasing customers in context.
+// ═══════════════════════════════════════════════════════════
+Total Customers =
+DISTINCTCOUNT ( FactSales[CustomerSK] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue YTD
+// KPI: Total Revenue (year-to-date pacing)
+// BUSINESS QUESTION: "How are we tracking against the annual plan so far?"
+// WHAT: Cumulative revenue from Jan 1 of the current year to the selected date.
+// WHY: Leadership manages to annual targets; YTD shows pacing at any point.
+// WHEN: Daily; the primary number on the executive scorecard.
+// TARGET: pacing toward $2.5B
+// POWER BI VISUAL: KPI Card / Line Chart
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: Time Intelligence — CALCULATE + DATESYTD
+// INTERVIEW: "Requirement for time intelligence?" -> a marked Date table with a
+//            contiguous daily date column (our DimDate[FullDate]).
+// FORMULA EXPLANATION:
+//   DATESYTD returns the set of dates from Jan-1 to the last date in context;
+//   CALCULATE re-evaluates [Total Revenue] over exactly that date set.
+// ═══════════════════════════════════════════════════════════
+Revenue YTD =
+CALCULATE ( [Total Revenue], DATESYTD ( DimDate[FullDate] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue QTD
+// KPI: Total Revenue (quarter-to-date pacing)
+// BUSINESS QUESTION: "How are we pacing this quarter?"
+// WHAT: Cumulative revenue from the first day of the current quarter.
+// WHY: Quarterly targets drive earnings guidance; QTD tracks the sprint.
+// WHEN: Weekly close meetings, especially near quarter end.
+// TARGET: quarter plan
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: CALCULATE + DATESQTD
+// INTERVIEW: "QTD vs YTD" -> identical pattern, different period boundary.
+// FORMULA EXPLANATION:
+//   DATESQTD builds the date set from quarter-start to the date in context;
+//   CALCULATE sums revenue over it.
+// ═══════════════════════════════════════════════════════════
+Revenue QTD =
+CALCULATE ( [Total Revenue], DATESQTD ( DimDate[FullDate] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue MTD
+// KPI: Total Revenue (month-to-date pacing)
+// BUSINESS QUESTION: "How much have we sold so far this month?"
+// WHAT: Cumulative revenue from the first day of the current month.
+// WHY: Store managers manage daily to a monthly number.
+// WHEN: Daily standup.
+// TARGET: month plan
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + DATESMTD
+// INTERVIEW: "Three built-in period-to-date functions" -> DATESYTD/QTD/MTD.
+// FORMULA EXPLANATION:
+//   DATESMTD returns month-start through the current date; CALCULATE sums it.
+// ═══════════════════════════════════════════════════════════
+Revenue MTD =
+CALCULATE ( [Total Revenue], DATESMTD ( DimDate[FullDate] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Prior Year
+// KPI: Revenue Growth YoY (building block)
+// BUSINESS QUESTION: "What did we sell in the same period last year?"
+// WHAT: Revenue shifted back exactly one year within the current context.
+// WHY: The comparison baseline for all year-over-year growth analysis.
+// WHEN: Monthly business reviews; growth storytelling.
+// TARGET: n/a (baseline)
+// POWER BI VISUAL: Line Chart (secondary series) / KPI comparison
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: CALCULATE + SAMEPERIODLASTYEAR
+// INTERVIEW: "SAMEPERIODLASTYEAR vs DATEADD(-1,YEAR)" -> SPLY is a specialized
+//            one-year shift; DATEADD is the general form (any offset/grain).
+// FORMULA EXPLANATION:
+//   SAMEPERIODLASTYEAR takes the dates in context and returns the matching
+//   dates one year earlier; CALCULATE evaluates revenue there.
+// ═══════════════════════════════════════════════════════════
+Revenue Prior Year =
+CALCULATE ( [Total Revenue], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue YoY Growth %
+// KPI: Revenue Growth YoY (target > 8%)
+// BUSINESS QUESTION: "Are we growing faster than last year?"
+// WHAT: (Current Year Revenue - Prior Year Revenue) / Prior Year Revenue.
+// WHY: THE headline growth number for the board and investors.
+// WHEN: Monthly / quarterly leadership reviews.
+// TARGET: > 8%
+// POWER BI VISUAL: KPI Card (with up/down arrow) / Line Chart
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: DIVIDE + variables + Time Intelligence reuse
+// INTERVIEW: "Why store PY in a VAR?" -> compute once, reuse twice, and keep
+//            the formula readable; VARs are evaluated in the outer context.
+// FORMULA EXPLANATION:
+//   VAR py captures last year's revenue; DIVIDE returns the growth ratio,
+//   yielding BLANK when there is no prior-year value (avoids /0 spikes).
+// ═══════════════════════════════════════════════════════════
+Revenue YoY Growth % =
+VAR CurrentRevenue = [Total Revenue]
+VAR PriorYearRevenue = [Revenue Prior Year]
+RETURN
+    DIVIDE ( CurrentRevenue - PriorYearRevenue, PriorYearRevenue )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue MoM Growth %
+// KPI: Revenue Growth (month-over-month momentum)
+// BUSINESS QUESTION: "Is momentum building or fading month to month?"
+// WHAT: (This Month - Previous Month) / Previous Month.
+// WHY: Faster signal than YoY for spotting turning points and campaigns.
+// WHEN: Weekly/monthly commercial reviews.
+// TARGET: positive & stable
+// POWER BI VISUAL: Line Chart / KPI Card
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + PREVIOUSMONTH
+// INTERVIEW: "MoM caveat" -> months have different day counts, so MoM is
+//            noisier than YoY; often paired with a moving average.
+// FORMULA EXPLANATION:
+//   PREVIOUSMONTH returns all dates of the prior calendar month; we compare
+//   current revenue to that and divide safely.
+// ═══════════════════════════════════════════════════════════
+Revenue MoM Growth % =
+VAR CurrentRevenue = [Total Revenue]
+VAR PriorMonthRevenue =
+    CALCULATE ( [Total Revenue], PREVIOUSMONTH ( DimDate[FullDate] ) )
+RETURN
+    DIVIDE ( CurrentRevenue - PriorMonthRevenue, PriorMonthRevenue )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Rolling 12 Months
+// KPI: Total Revenue (trailing-twelve-months, TTM)
+// BUSINESS QUESTION: "What's our run-rate revenue over the last full year?"
+// WHAT: Sum of revenue across the 12 months ending on the date in context.
+// WHY: TTM smooths seasonality and is the standard investor run-rate view.
+// WHEN: Board decks; trend lines.
+// TARGET: trending toward $2.5B run-rate
+// POWER BI VISUAL: Line Chart
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: CALCULATE + DATESINPERIOD
+// INTERVIEW: "DATESINPERIOD args" -> (dates, anchor date, count, interval);
+//            a NEGATIVE count looks BACKWARD from the anchor.
+// FORMULA EXPLANATION:
+//   MAX(DimDate[FullDate]) is the anchor (last visible date); DATESINPERIOD
+//   walks back 12 MONTHS and CALCULATE sums revenue over that window.
+// ═══════════════════════════════════════════════════════════
+Revenue Rolling 12 Months =
+CALCULATE (
+    [Total Revenue],
+    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -12, MONTH )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue 3M Moving Average
+// KPI: Total Revenue (smoothed trend)
+// BUSINESS QUESTION: "What's the underlying trend, ignoring monthly noise?"
+// WHAT: Average of monthly revenue over the trailing 3 months.
+// WHY: Removes spikes so leadership sees the true direction of the business.
+// WHEN: Trend reviews; forecasting inputs.
+// TARGET: n/a (smoothing aid)
+// POWER BI VISUAL: Line Chart (overlaid on monthly revenue)
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: AVERAGEX iterating over a date period + VALUES
+// INTERVIEW: "Iterator vs aggregator" -> AVERAGEX evaluates an expression per
+//            row of a table (here per month) then averages the results.
+// FORMULA EXPLANATION:
+//   VALUES(DimDate[YearMonth]) over the trailing 3-month window gives up to 3
+//   month rows; for each, we compute revenue, then AVERAGEX averages them.
+// ═══════════════════════════════════════════════════════════
+Revenue 3M Moving Average =
+AVERAGEX (
+    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -3, MONTH ),
+    [Total Revenue]
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Running Total
+// KPI: Total Revenue (cumulative pacing within the year)
+// BUSINESS QUESTION: "What's our accumulated revenue up to this point?"
+// WHAT: A running (cumulative) sum of revenue across the visual's date axis.
+// WHY: Shows progress toward an annual goal as an ever-rising line.
+// WHEN: Executive goal-tracking charts.
+// TARGET: rising toward $2.5B
+// POWER BI VISUAL: Area / Line Chart (cumulative)
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: CALCULATE + FILTER + ALLSELECTED (open-ended date filter)
+// INTERVIEW: "Running total pattern" -> keep all dates <= the current date
+//            while respecting outer slicers via ALLSELECTED.
+// FORMULA EXPLANATION:
+//   MaxDate is the current axis date; FILTER over ALLSELECTED dates keeps
+//   everything up to and including it; CALCULATE sums revenue over that set.
+// ═══════════════════════════════════════════════════════════
+Revenue Running Total =
+VAR MaxDate = MAX ( DimDate[FullDate] )
+RETURN
+    CALCULATE (
+        [Total Revenue],
+        FILTER ( ALLSELECTED ( DimDate[FullDate] ), DimDate[FullDate] <= MaxDate )
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Prior Month
+// KPI: Revenue Growth (MoM building block)
+// BUSINESS QUESTION: "What did last month bring in?"
+// WHAT: Revenue for the previous calendar month relative to context.
+// WHY: Baseline for MoM comparisons and month-close narratives.
+// WHEN: Monthly close.
+// TARGET: n/a (baseline)
+// POWER BI VISUAL: KPI comparison / Line Chart
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + PREVIOUSMONTH
+// INTERVIEW: "PREVIOUSMONTH vs DATEADD(-1,MONTH)" -> PREVIOUSMONTH ignores the
+//            day-in-month and returns the whole prior month.
+// FORMULA EXPLANATION:
+//   PREVIOUSMONTH shifts the date context back one full month; CALCULATE sums.
+// ═══════════════════════════════════════════════════════════
+Revenue Prior Month =
+CALCULATE ( [Total Revenue], PREVIOUSMONTH ( DimDate[FullDate] ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Same Day Last Year
+// KPI: Revenue Growth (daily YoY comparison)
+// BUSINESS QUESTION: "How did today compare to the exact day last year?"
+// WHAT: Revenue for the same calendar day one year ago.
+// WHY: Daily operations compare like-for-like days (esp. holidays/promo days).
+// WHEN: Daily standup during peak seasons (Black Friday, holidays).
+// TARGET: n/a (comparison)
+// POWER BI VISUAL: KPI Card / Daily Line Chart
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + DATEADD(-1, YEAR)
+// INTERVIEW: "Why DATEADD here, not SPLY?" -> at DAY grain DATEADD returns the
+//            single matching day; both work but DATEADD reads intent clearly.
+// FORMULA EXPLANATION:
+//   DATEADD shifts each date in context back 1 YEAR; at day grain that's the
+//   same day last year, over which CALCULATE evaluates revenue.
+// ═══════════════════════════════════════════════════════════
+Revenue Same Day Last Year =
+CALCULATE ( [Total Revenue], DATEADD ( DimDate[FullDate], -1, YEAR ) )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Last 7 Days
+// KPI: Total Revenue (rolling week)
+// BUSINESS QUESTION: "How did the last week perform?"
+// WHAT: Sum of revenue over the trailing 7 days from the latest date.
+// WHY: Fast operational pulse; catches sudden dips/spikes early.
+// WHEN: Daily operations dashboard.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + DATESINPERIOD (-7 DAY)
+// INTERVIEW: "Rolling window pattern" -> anchor on MAX date, count backward.
+// FORMULA EXPLANATION:
+//   DATESINPERIOD anchors on the last visible date and walks back 7 DAYS;
+//   CALCULATE sums revenue over that 7-day window.
+// ═══════════════════════════════════════════════════════════
+Revenue Last 7 Days =
+CALCULATE (
+    [Total Revenue],
+    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -7, DAY )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue Last 30 Days
+// KPI: Total Revenue (rolling month)
+// BUSINESS QUESTION: "How did the last 30 days perform?"
+// WHAT: Sum of revenue over the trailing 30 days from the latest date.
+// WHY: Common marketing/finance window independent of calendar month length.
+// WHEN: Campaign performance and cash-flow monitoring.
+// TARGET: n/a
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 2-Sales Performance
+// DAX CONCEPT: CALCULATE + DATESINPERIOD (-30 DAY)
+// INTERVIEW: "Last 30 days vs MTD" -> rolling window vs calendar-month reset.
+// FORMULA EXPLANATION:
+//   Same rolling pattern as the 7-day measure with a 30-DAY lookback.
+// ═══════════════════════════════════════════════════════════
+Revenue Last 30 Days =
+CALCULATE (
+    [Total Revenue],
+    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -30, DAY )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue by Channel Store
+// KPI: Revenue Per Store / channel mix
+// BUSINESS QUESTION: "How much comes from physical stores?"
+// WHAT: Revenue filtered to FactSales[Channel] = "Store".
+// WHY: Channel P&Ls differ; store revenue drives real-estate/staffing decisions.
+// WHEN: Channel mix reviews.
+// TARGET: n/a (mix)
+// POWER BI VISUAL: Donut / Stacked Bar / KPI Card
+// DASHBOARD: 6-Regional & Store Performance
+// DAX CONCEPT: CALCULATE with a value filter
+// INTERVIEW: "CALCULATE filter arg on a column literal" -> shorthand that
+//            replaces the Channel filter with just 'Store'.
+// FORMULA EXPLANATION:
+//   CALCULATE re-runs [Total Revenue] but forces Channel = "Store", overriding
+//   any conflicting channel selection for THIS measure only.
+// ═══════════════════════════════════════════════════════════
+Revenue by Channel Store =
+CALCULATE ( [Total Revenue], FactSales[Channel] = "Store" )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Revenue by Channel Ecommerce
+// KPI: Ecommerce Share / channel mix
+// BUSINESS QUESTION: "How much comes from our website?"
+// WHAT: Revenue filtered to FactSales[Channel] = "E-commerce".
+// WHY: E-commerce is ~40% of the business (per BRD) and growing fastest.
+// WHEN: Digital growth reviews.
+// TARGET: n/a (mix)
+// POWER BI VISUAL: Donut / Stacked Bar / KPI Card
+// DASHBOARD: 6-Regional & Store Performance
+// DAX CONCEPT: CALCULATE with a value filter
+// INTERVIEW: "Exact string match matters" -> value must equal the stored
+//            'E-commerce' text exactly (matches the ETL Channel value).
+// FORMULA EXPLANATION:
+//   CALCULATE forces Channel = "E-commerce" while evaluating revenue.
+// ═══════════════════════════════════════════════════════════
+Revenue by Channel Ecommerce =
+CALCULATE ( [Total Revenue], FactSales[Channel] = "E-commerce" )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Ecommerce Share %
+// KPI: Channel mix (BRD notes e-commerce ~40% of revenue)
+// BUSINESS QUESTION: "What share of revenue is digital?"
+// WHAT: E-commerce revenue divided by total revenue.
+// WHY: Tracks the strategic shift toward digital; targets ~40%+.
+// WHEN: Executive digital-transformation reviews.
+// TARGET: ~40% (strategic)
+// POWER BI VISUAL: KPI Card / Gauge
+// DASHBOARD: 1-Executive Overview
+// DAX CONCEPT: DIVIDE + measure reuse
+// INTERVIEW: "% of a subtotal" -> divide a filtered measure by the unfiltered
+//            total; reuse existing measures rather than re-summing.
+// FORMULA EXPLANATION:
+//   Numerator reuses [Revenue by Channel Ecommerce]; denominator is total
+//   revenue in the SAME context so the ratio is a true share.
+// ═══════════════════════════════════════════════════════════
+Ecommerce Share % =
+DIVIDE ( [Revenue by Channel Ecommerce], [Total Revenue] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Dynamic Revenue Title
+// KPI: (UX helper — not a KPI itself)
+// BUSINESS QUESTION: "What exactly am I looking at on this chart?"
+// WHAT: Builds a text title that echoes the selected year/region so a chart
+//       title updates as slicers change (e.g. "Revenue — 2025 — West: $312.4M").
+// WHY: Self-documenting visuals reduce misreads in exec meetings and exports.
+// WHEN: Bound to a visual's Title via "Conditional formatting > fx".
+// TARGET: n/a
+// POWER BI VISUAL: Card title / any visual's dynamic title
+// DASHBOARD: All dashboards (title bars)
+// DAX CONCEPT: SELECTEDVALUE + string concatenation + FORMAT
+// INTERVIEW: "SELECTEDVALUE" -> returns the single selected value or a fallback
+//            when 0 or >1 values are selected (perfect for titles).
+// FORMULA EXPLANATION:
+//   SELECTEDVALUE reads the current Year and Region (with "All ..." fallbacks);
+//   FORMAT renders revenue compactly in $M; the pieces are joined into a title.
+// ═══════════════════════════════════════════════════════════
+Dynamic Revenue Title =
+VAR SelectedYear = SELECTEDVALUE ( DimDate[Year], "All Years" )
+VAR SelectedRegion = SELECTEDVALUE ( DimRegion[RegionName], "All Regions" )
+VAR RevenueInMillions = FORMAT ( DIVIDE ( [Total Revenue], 1000000 ), "$#,##0.0" ) & "M"
+RETURN
+    "Revenue — " & SelectedYear & " — " & SelectedRegion & ": " & RevenueInMillions

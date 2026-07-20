@@ -1,0 +1,497 @@
+// =============================================================================
+// ShopStar Retail — RetailDW Power BI Semantic Model
+// FILE 4 of 5: Inventory & Returns Measures  (20 measures)
+// =============================================================================
+// Author:   Amit Jaiswal  |  Role: Senior BI Engineer
+// Phase:     Phase 7 — Advanced DAX
+// Depends on: File 1 ([Total Revenue], [Total Orders]) & File 2 ([Total COGS])
+//
+// EXACT COLUMNS USED (verified vs 04_Fact_Tables.sql):
+//   FactInventory[QuantityOnHand]  -> stock units at snapshot (SEMI-ADDITIVE!)
+//   FactInventory[InventoryValue]  -> QtyOnHand * UnitCost
+//   FactInventory[ReorderPoint]    -> low-stock threshold
+//   FactInventory[ReorderQuantity] -> standard reorder lot
+//   FactInventory[IsLowStock]      -> BIT flag (1/0)
+//   FactInventory[IsOutOfStock]    -> BIT flag (1/0)
+//   FactInventory[ProductSK], FactInventory[StoreSK], FactInventory[SnapshotDateKey]
+//   FactReturns[RefundAmount], FactReturns[OriginalLineTotal],
+//   FactReturns[DaysToReturn], FactReturns[Reason], FactReturns[Condition],
+//   FactReturns[ReturnID]
+//
+// *** SEMI-ADDITIVE WARNING (the #1 inventory interview trap) ***
+//   Stock on hand is additive across PRODUCT and STORE, but NOT across DATE.
+//   You cannot SUM January + February stock — that double counts. You take the
+//   LAST snapshot in the period. We use LASTNONBLANK / a last-date pattern so
+//   the number is correct at any date grain. Read the FORMULA EXPLANATIONS.
+// =============================================================================
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Stock on Hand
+// KPI: Inventory position (semi-additive!)
+// BUSINESS QUESTION: "How many units are in stock right now?"
+// WHAT: Units on hand at the LATEST snapshot within the current date context.
+// WHY: Summing snapshots across dates double-counts the same physical units;
+//      we must take the most recent snapshot instead.
+// WHEN: Daily inventory ops.
+// TARGET: n/a (position)
+// POWER BI VISUAL: KPI Card / Matrix by Product
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: Semi-additive — LASTNONBLANK over the date dimension
+// INTERVIEW: "Semi-additive measures" -> additive on all dims EXCEPT time; use
+//            last (or average) snapshot over time. THIS is the classic answer.
+// FORMULA EXPLANATION:
+//   LASTNONBLANK finds the last date in context that has data; CALCULATE then
+//   sums QuantityOnHand at ONLY that snapshot date, giving the true position.
+// ═══════════════════════════════════════════════════════════
+Total Stock on Hand =
+CALCULATE (
+    SUM ( FactInventory[QuantityOnHand] ),
+    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Inventory Value
+// KPI: Working capital tied in stock
+// BUSINESS QUESTION: "How much money is sitting in inventory?"
+// WHAT: Value (Qty × Cost) at the latest snapshot in context.
+// WHY: Inventory is cash on the shelf; finance manages it as working capital.
+// WHEN: Finance and supply-chain reviews.
+// TARGET: minimize while avoiding stockouts
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: Semi-additive (last snapshot)
+// INTERVIEW: "Also semi-additive" -> value follows the same last-snapshot rule.
+// FORMULA EXPLANATION:
+//   Same LASTNONBLANK pattern, summing the pre-computed InventoryValue at the
+//   most recent snapshot date only.
+// ═══════════════════════════════════════════════════════════
+Inventory Value =
+CALCULATE (
+    SUM ( FactInventory[InventoryValue] ),
+    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[InventoryValue] ) ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Inventory Turnover
+// KPI: Inventory Turnover (TARGET > 8x / year)
+// BUSINESS QUESTION: "How many times did we sell through our stock this year?"
+// WHAT: COGS divided by average inventory value.
+// WHY: High turnover = efficient capital use; low turnover = cash stuck in
+//      slow-moving stock.
+// WHEN: Supply-chain and finance MBRs.
+// TARGET: > 8x per year
+// POWER BI VISUAL: KPI Card (RAG) / Gauge
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: DIVIDE + AVERAGEX over snapshots
+// INTERVIEW: "Why COGS not Revenue?" -> turnover uses COST vs COST-valued
+//            inventory to avoid mixing margin into the ratio.
+// FORMULA EXPLANATION:
+//   Numerator = [Total COGS]. Denominator = average inventory value across the
+//   period's snapshots (AVERAGEX over distinct snapshot dates), which better
+//   represents 'typical' stock than a single day.
+// ═══════════════════════════════════════════════════════════
+Inventory Turnover =
+VAR AvgInventoryValue =
+    AVERAGEX (
+        VALUES ( FactInventory[SnapshotDateKey] ),
+        CALCULATE ( SUM ( FactInventory[InventoryValue] ) )
+    )
+RETURN
+    DIVIDE ( [Total COGS], AvgInventoryValue )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Days of Inventory
+// KPI: Days of Inventory / DIO (TARGET < 45 days)
+// BUSINESS QUESTION: "How many days of sales does our stock cover?"
+// WHAT: 365 divided by inventory turnover.
+// WHY: The intuitive flip side of turnover; supply chain thinks in 'days cover'.
+// WHEN: Supply-chain planning.
+// TARGET: < 45 days
+// POWER BI VISUAL: KPI Card (RAG)
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: DIVIDE + measure reuse
+// INTERVIEW: "DIO = 365 / turnover" -> lower is leaner; too low risks stockouts.
+// FORMULA EXPLANATION: 365 / [Inventory Turnover], guarded by DIVIDE.
+// ═══════════════════════════════════════════════════════════
+Days of Inventory =
+DIVIDE ( 365, [Inventory Turnover] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Low Stock Items Count
+// KPI: Replenishment workload
+// BUSINESS QUESTION: "How many product/store positions are below reorder point?"
+// WHAT: Counts snapshot rows flagged IsLowStock = 1 at the latest snapshot.
+// WHY: Sizes the replenishment queue for buyers.
+// WHEN: Daily replenishment ops.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card / Table
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: CALCULATE + flag filter + last-snapshot scope
+// INTERVIEW: "Use the ETL flag" -> the warehouse pre-computes IsLowStock, so DAX
+//            just counts flagged rows at the current snapshot.
+// FORMULA EXPLANATION:
+//   Restrict to the latest snapshot date, then count inventory rows where the
+//   IsLowStock bit equals 1.
+// ═══════════════════════════════════════════════════════════
+Low Stock Items Count =
+CALCULATE (
+    COUNTROWS ( FactInventory ),
+    FactInventory[IsLowStock] = TRUE (),
+    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Out of Stock Items Count
+// KPI: Availability failures
+// BUSINESS QUESTION: "How many positions are completely out of stock?"
+// WHAT: Counts snapshot rows flagged IsOutOfStock = 1 at the latest snapshot.
+// WHY: Direct lost-sales risk; feeds the Stockout Rate KPI.
+// WHEN: Daily ops; escalation triggers.
+// TARGET: near zero
+// POWER BI VISUAL: KPI Card (red)
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: CALCULATE + flag filter + last-snapshot scope
+// INTERVIEW: "OOS drives lost sales" -> the numerator of Stockout Rate.
+// FORMULA EXPLANATION:
+//   Same last-snapshot scope, counting rows where IsOutOfStock = 1.
+// ═══════════════════════════════════════════════════════════
+Out of Stock Items Count =
+CALCULATE (
+    COUNTROWS ( FactInventory ),
+    FactInventory[IsOutOfStock] = TRUE (),
+    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Stockout Rate %
+// KPI: Stockout Rate (TARGET < 2%)
+// BUSINESS QUESTION: "What share of positions are out of stock?"
+// WHAT: Out-of-stock positions divided by total positions at the latest snapshot.
+// WHY: Normalizes OOS so stores/categories of different sizes compare fairly.
+// WHEN: Availability scorecard.
+// TARGET: < 2%
+// POWER BI VISUAL: KPI Card (RAG)
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: DIVIDE of two last-snapshot counts
+// INTERVIEW: "Rate needs a consistent denominator" -> both counts must use the
+//            SAME snapshot date, or the ratio is meaningless.
+// FORMULA EXPLANATION:
+//   Total positions at the last snapshot form the denominator; [Out of Stock
+//   Items Count] is the numerator; DIVIDE yields the rate.
+// ═══════════════════════════════════════════════════════════
+Stockout Rate % =
+VAR TotalPositions =
+    CALCULATE (
+        COUNTROWS ( FactInventory ),
+        LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+    )
+RETURN
+    DIVIDE ( [Out of Stock Items Count], TotalPositions )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Overstock Items Count
+// KPI: Excess inventory
+// BUSINESS QUESTION: "Where are we holding far more than we need?"
+// WHAT: Positions where QuantityOnHand exceeds 200% of ReorderQuantity.
+// WHY: Overstock ties up cash and risks markdowns/obsolescence.
+// WHEN: Markdown planning; open-to-buy reviews.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card / Table
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: CALCULATE + FILTER comparing two columns
+// INTERVIEW: "Column-to-column compare needs FILTER/row context" -> a bare
+//            CALCULATE boolean can't compare two columns; FILTER provides the
+//            row context to evaluate QuantityOnHand > 2 * ReorderQuantity.
+// FORMULA EXPLANATION:
+//   At the latest snapshot, FILTER keeps rows where on-hand > 2× reorder lot;
+//   COUNTROWS returns how many positions are overstocked.
+// ═══════════════════════════════════════════════════════════
+Overstock Items Count =
+CALCULATE (
+    COUNTROWS (
+        FILTER ( FactInventory, FactInventory[QuantityOnHand] > 2 * FactInventory[ReorderQuantity] )
+    ),
+    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Inventory Health Score
+// KPI: Overall inventory health RAG
+// BUSINESS QUESTION: "Is inventory healthy overall?"
+// WHAT: RAG label blending stockout rate against the <2% target.
+// WHY: One glanceable signal for the supply-chain scorecard.
+// WHEN: Executive supply-chain review.
+// TARGET: Green < 2%, Amber 2-5%, Red > 5% stockout
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: SWITCH(TRUE())
+// INTERVIEW: "Composite health" -> can extend to weight turnover + OOS together.
+// FORMULA EXPLANATION:
+//   Read [Stockout Rate %]; SWITCH maps it to the RAG band.
+// ═══════════════════════════════════════════════════════════
+Inventory Health Score =
+VAR StockoutRate = [Stockout Rate %]
+RETURN
+    SWITCH (
+        TRUE (),
+        StockoutRate < 0.02, "🟢 Green",
+        StockoutRate < 0.05, "🟡 Amber",
+        "🔴 Red"
+    )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Stock Coverage Days
+// KPI: Availability runway
+// BUSINESS QUESTION: "At current sales pace, how long until we run out?"
+// WHAT: Current units on hand divided by average daily units sold.
+// WHY: Tells buyers how urgently to reorder before a stockout.
+// WHEN: Replenishment planning.
+// TARGET: keep above lead time
+// POWER BI VISUAL: Table / KPI Card
+// DASHBOARD: 5-Inventory & Supply Chain
+// DAX CONCEPT: DIVIDE + average daily sales rate
+// INTERVIEW: "Coverage vs DIO" -> coverage is forward-looking from CURRENT
+//            stock and recent sell rate; DIO is a period ratio.
+// FORMULA EXPLANATION:
+//   AvgDailyUnits = total units sold / number of days in context; coverage =
+//   current on-hand / that daily rate.
+// ═══════════════════════════════════════════════════════════
+Stock Coverage Days =
+VAR DaysInContext = COUNTROWS ( VALUES ( DimDate[FullDate] ) )
+VAR AvgDailyUnits = DIVIDE ( [Total Quantity Sold], DaysInContext )
+RETURN
+    DIVIDE ( [Total Stock on Hand], AvgDailyUnits )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Returns Count
+// KPI: Returns volume
+// BUSINESS QUESTION: "How many returns did we process?"
+// WHAT: Distinct count of ReturnID in FactReturns.
+// WHY: Base volume for all returns analysis and the Return Rate KPI.
+// WHEN: Quality and reverse-logistics reviews.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: DISTINCTCOUNT
+// INTERVIEW: "Separate fact table" -> returns live in FactReturns at their own
+//            grain; measures target the right fact.
+// FORMULA EXPLANATION: DISTINCTCOUNT of FactReturns[ReturnID] in context.
+// ═══════════════════════════════════════════════════════════
+Total Returns Count =
+DISTINCTCOUNT ( FactReturns[ReturnID] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Total Refund Amount
+// KPI: Returns financial impact (also used by Net Revenue in File 2)
+// BUSINESS QUESTION: "How much money did we refund?"
+// WHAT: Sums RefundAmount across returns.
+// WHY: Direct revenue leakage; nets against sales for true retained revenue.
+// WHEN: Finance close; returns cost analysis.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: SUM
+// INTERVIEW: "Cross-fact reuse" -> File 2's [Net Revenue] subtracts THIS.
+// FORMULA EXPLANATION: Additive SUM of FactReturns[RefundAmount].
+// ═══════════════════════════════════════════════════════════
+Total Refund Amount =
+SUM ( FactReturns[RefundAmount] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Return Rate %
+// KPI: Return Rate (TARGET < 5%)
+// BUSINESS QUESTION: "What share of sales value comes back as returns?"
+// WHAT: Refund dollars divided by gross sales value.
+// WHY: Quality/fit signal; high returns erode margin and satisfaction.
+// WHEN: Product quality and merchandising reviews.
+// TARGET: < 5%
+// POWER BI VISUAL: KPI Card (RAG)
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: DIVIDE across two facts
+// INTERVIEW: "Value-based vs count-based return rate" -> both exist; here we use
+//            refund $ over sales $ for a financial view.
+// FORMULA EXPLANATION:
+//   [Total Refund Amount] / [Total Revenue]; DIVIDE guards empty selections.
+// ═══════════════════════════════════════════════════════════
+Return Rate % =
+DIVIDE ( [Total Refund Amount], [Total Revenue] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Top Return Reason
+// KPI: Return root cause
+// BUSINESS QUESTION: "What's the #1 reason customers return items?"
+// WHAT: The Reason value with the most returns in context.
+// WHY: Focuses quality fixes on the biggest driver (sizing, damage, etc.).
+// WHEN: Quality root-cause reviews.
+// TARGET: n/a (diagnostic)
+// POWER BI VISUAL: Card / feeds a bar chart title
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: TOPN + MAXX over a grouped table
+// INTERVIEW: "Return a label, not a number" -> rank reasons by count, take the
+//            top one's name.
+// FORMULA EXPLANATION:
+//   TOPN(1, ...) ranks each Reason by its return count and returns the leading
+//   reason; MAXX extracts its text value.
+// ═══════════════════════════════════════════════════════════
+Top Return Reason =
+MAXX (
+    TOPN (
+        1,
+        VALUES ( FactReturns[Reason] ),
+        CALCULATE ( DISTINCTCOUNT ( FactReturns[ReturnID] ) ),
+        DESC
+    ),
+    FactReturns[Reason]
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Avg Days to Return
+// KPI: Returns velocity
+// BUSINESS QUESTION: "How quickly do customers return items after buying?"
+// WHAT: Average of DaysToReturn across returns.
+// WHY: Fast returns hint at wrong-item/damaged; slow returns hint at buyer's
+//      remorse or fit — different fixes.
+// WHEN: Quality diagnostics; return-policy design.
+// TARGET: informational
+// POWER BI VISUAL: KPI Card / Histogram
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: AVERAGE
+// INTERVIEW: "Pre-computed in ETL" -> DaysToReturn stored per return row.
+// FORMULA EXPLANATION: AVERAGE of the pre-computed DaysToReturn column.
+// ═══════════════════════════════════════════════════════════
+Avg Days to Return =
+AVERAGE ( FactReturns[DaysToReturn] )
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Return Rate by Category
+// KPI: Category quality
+// BUSINESS QUESTION: "Which product categories get returned most?"
+// WHAT: Return Rate % surfaced on a category axis.
+// WHY: Pinpoints problem categories for supplier and quality action.
+// WHEN: Category quality reviews.
+// TARGET: < 5% per category
+// POWER BI VISUAL: Matrix / Bar by Category (conditional formatting)
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: measure reuse in category filter context
+// INTERVIEW: "One rate, many cuts" -> the Category axis slices the same rate.
+// FORMULA EXPLANATION: Reuses [Return Rate %]; the category axis provides the
+//                      per-category context.
+// ═══════════════════════════════════════════════════════════
+Return Rate by Category =
+[Return Rate %]
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Return Rate YoY
+// KPI: Returns trend
+// BUSINESS QUESTION: "Are returns getting better or worse year over year?"
+// WHAT: Current return rate minus last year's return rate (percentage points).
+// WHY: Confirms whether quality initiatives are actually working.
+// WHEN: Quarterly quality reviews.
+// TARGET: negative (improving)
+// POWER BI VISUAL: KPI Card / Line
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: SAMEPERIODLASTYEAR on a ratio measure
+// INTERVIEW: "Delta of rates" -> subtract prior-year RATE, not raw counts, for
+//            a fair size-independent comparison.
+// FORMULA EXPLANATION:
+//   Compute prior-year [Return Rate %] via SAMEPERIODLASTYEAR; return the
+//   point difference vs the current rate.
+// ═══════════════════════════════════════════════════════════
+Return Rate YoY =
+VAR CurrentRate = [Return Rate %]
+VAR PriorRate =
+    CALCULATE ( [Return Rate %], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+RETURN
+    CurrentRate - PriorRate
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Defective Returns Count
+// KPI: Product quality failures
+// BUSINESS QUESTION: "How many returns were due to defective/damaged goods?"
+// WHAT: Counts returns whose Condition indicates 'Damaged' or 'Defective'.
+// WHY: Isolates true quality failures from remorse/fit returns.
+// WHEN: Supplier quality escalations.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: CALCULATE + IN filter on Condition
+// INTERVIEW: "Filter by a set of values" -> use the IN operator for multiple
+//            acceptable condition labels.
+// FORMULA EXPLANATION:
+//   CALCULATE counts returns where Condition is in the 'quality-failure' set.
+//   Adjust the label list to match the ETL's Condition domain.
+// ═══════════════════════════════════════════════════════════
+Defective Returns Count =
+CALCULATE (
+    [Total Returns Count],
+    FactReturns[Condition] IN { "Damaged", "Defective" }
+)
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: Cost of Returns
+// KPI: True returns cost
+// BUSINESS QUESTION: "What do returns really cost us, including logistics?"
+// WHAT: Refund dollars plus an estimated reverse-logistics cost per return.
+// WHY: The refund alone understates cost; processing/shipping adds up.
+// WHEN: Returns program ROI; policy decisions.
+// TARGET: minimize
+// POWER BI VISUAL: KPI Card
+// DASHBOARD: 8-Returns & Quality
+// DAX CONCEPT: measure arithmetic + a business-rule constant
+// INTERVIEW: "Model assumptions explicitly" -> the $8/return logistics estimate
+//            is a documented assumption; expose it as a parameter in production.
+// FORMULA EXPLANATION:
+//   Cost = refunds + (returns count × $8 estimated handling/shipping). The
+//   constant is a placeholder to be replaced by an actual cost feed later.
+// ═══════════════════════════════════════════════════════════
+Cost of Returns =
+VAR LogisticsPerReturn = 8
+RETURN
+    [Total Refund Amount] + [Total Returns Count] * LogisticsPerReturn
+
+
+// ═══════════════════════════════════════════════════════════
+// MEASURE: KPI Status Return Rate
+// KPI: Return Rate RAG (TARGET < 5%)
+// BUSINESS QUESTION: "At a glance, are returns under control?"
+// WHAT: RAG label comparing [Return Rate %] to the 5% target (LOWER is better).
+// WHY: Instant health signal on the quality scorecard.
+// WHEN: Executive quality review.
+// TARGET: Green < 5%, Amber 5-8%, Red > 8%
+// POWER BI VISUAL: KPI Card / conditional-format driver
+// DASHBOARD: 8-Returns & Quality, 1-Executive Overview
+// DAX CONCEPT: SWITCH(TRUE()) with inverted logic (low = good)
+// INTERVIEW: "Direction matters" -> for 'lower is better' KPIs the RAG bands
+//            flip; be deliberate about comparison operators.
+// FORMULA EXPLANATION:
+//   Read [Return Rate %]; SWITCH assigns green when BELOW target, escalating to
+//   red as it rises.
+// ═══════════════════════════════════════════════════════════
+KPI Status Return Rate =
+VAR ReturnRateValue = [Return Rate %]
+RETURN
+    SWITCH (
+        TRUE (),
+        ReturnRateValue < 0.05, "🟢 Green",
+        ReturnRateValue < 0.08, "🟡 Amber",
+        "🔴 Red"
+    )
