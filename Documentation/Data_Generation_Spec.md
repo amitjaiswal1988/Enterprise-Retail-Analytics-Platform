@@ -1,6 +1,6 @@
 # Data Generation Specification
 
-## NovaMart Retail — Synthetic Dataset Generator
+## ShopStar Retail — Synthetic Dataset Generator
 
 ---
 
@@ -118,9 +118,9 @@ Each defect above maps to a specific ETL transformation in the SQL Server stagin
 | Aspect | Details |
 |--------|---------|
 | **Detection** | `WHERE Email IS NULL` |
-| **Treatment** | Replace with placeholder `'unknown@novamart.com'` or flag with `IsEmailMissing = 1` |
+| **Treatment** | Replace with placeholder `'unknown@shopstar.com'` or flag with `IsEmailMissing = 1` |
 | **Rationale** | Email is optional for in-store customers; analytics should not exclude these rows |
-| **SQL Pattern** | `ISNULL(Email, 'unknown@novamart.com')` |
+| **SQL Pattern** | `ISNULL(Email, 'unknown@shopstar.com')` |
 
 ### DEF-02: Duplicate Orders
 

@@ -13,7 +13,7 @@
 | **Key Output** | Business Requirement Document (BRD) |
 
 ### What We Did
-1. Defined NovaMart Retail as our simulated enterprise retailer
+1. Defined ShopStar Retail as our simulated enterprise retailer
 2. Documented business model (Brick & Mortar + E-commerce)
 3. Defined 20+ KPIs across 4 categories (Financial, Operational, Customer, Employee)
 4. Mapped 10 stakeholders with their reporting needs
@@ -47,7 +47,7 @@
 5. Documented each defect with expected staging treatment
 6. Created 68 automated tests covering schema, volume, integrity, defects
 7. Set up professional .gitignore and folder structure
-8. Replaced HPE branding with NovaMart Retail
+8. Replaced HPE branding with ShopStar Retail
 
 ### Files Created
 - `Python/generate_dataset.py` — Main generator (653 lines)

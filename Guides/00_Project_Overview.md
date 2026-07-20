@@ -12,7 +12,7 @@ This is an **end-to-end Enterprise Business Intelligence (BI) project** that dem
 
 ## The Story (Business Scenario)
 
-**NovaMart Retail** is a simulated multi-channel retailer:
+**ShopStar Retail** is a simulated multi-channel retailer:
 - 120+ physical stores across 35 US states
 - E-commerce platform generating 40% of revenue
 - 5,000+ employees

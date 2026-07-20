@@ -282,7 +282,7 @@ python Python/generate_dataset.py --profile development
 **Expected output:**
 ```
 ============================================================
-  NovaMart Retail - Synthetic Data Generator
+  ShopStar Retail - Synthetic Data Generator
   Profile: development
   Output:  C:\...\Enterprise-Retail-Analytics-Platform\Dataset
 ============================================================
