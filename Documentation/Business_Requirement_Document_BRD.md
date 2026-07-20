@@ -1,0 +1,612 @@
+# Business Requirement Document (BRD)
+
+## Enterprise Retail Analytics Platform
+
+---
+
+| Document Control | Details |
+|-----------------|---------|
+| **Document ID** | BRD-RETAIL-2026-001 |
+| **Version** | 1.0 |
+| **Status** | Approved |
+| **Author** | BI Development Team |
+| **Date Created** | July 20, 2026 |
+| **Last Updated** | July 20, 2026 |
+| **Approved By** | VP of Retail Operations |
+| **Project Sponsor** | Chief Data Officer |
+
+---
+
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [Company Overview](#2-company-overview)
+3. [Business Objectives](#3-business-objectives)
+4. [Scope](#4-scope)
+5. [Business Model](#5-business-model)
+6. [Revenue Model](#6-revenue-model)
+7. [Key Performance Indicators](#7-key-performance-indicators)
+8. [Stakeholder Analysis](#8-stakeholder-analysis)
+9. [Functional Requirements](#9-functional-requirements)
+10. [Non-Functional Requirements](#10-non-functional-requirements)
+11. [Data Requirements](#11-data-requirements)
+12. [Security Requirements](#12-security-requirements)
+13. [Assumptions & Constraints](#13-assumptions--constraints)
+14. [Risks & Mitigation](#14-risks--mitigation)
+15. [Success Criteria](#15-success-criteria)
+16. [Sign-Off](#16-sign-off)
+
+---
+
+## 1. Executive Summary
+
+### 1.1 Purpose
+
+This document defines the business requirements for the **Enterprise Retail Analytics Platform** — a centralized Business Intelligence solution for HPE Retail Division. The platform will consolidate data from multiple source systems into a unified data warehouse and deliver actionable insights through interactive Power BI dashboards.
+
+### 1.2 Background
+
+HPE Retail Division currently relies on fragmented reporting across multiple Excel spreadsheets, legacy Crystal Reports, and ad-hoc SQL queries. This results in:
+
+- Inconsistent metrics across departments
+- 3-5 day delay in data availability
+- No self-service analytics capability
+- Manual effort consuming 40+ analyst hours per week
+- Inability to perform cross-channel (store vs e-commerce) analysis
+
+### 1.3 Proposed Solution
+
+Implement a modern BI platform using:
+- **SQL Server** for data warehousing (Star Schema)
+- **Power BI** for visualization and self-service analytics
+- **Automated ETL** for daily data refresh
+- **Row-Level Security** for data governance
+
+### 1.4 Expected Benefits
+
+| Benefit | Measurement | Target |
+|---------|------------|--------|
+| Reduced reporting time | Hours saved per week | 30+ hours |
+| Faster decision-making | Data freshness | Same-day (vs 3-5 day lag) |
+| Consistent metrics | Single source of truth | 100% alignment |
+| Self-service analytics | User adoption rate | >70% within 6 months |
+| Cost reduction | Eliminated legacy tools | $200K annually |
+
+---
+
+## 2. Company Overview
+
+### 2.1 Organization Profile
+
+| Attribute | Details |
+|-----------|---------|
+| **Company** | HPE Retail Division |
+| **Industry** | Retail (Multi-channel) |
+| **Founded** | 2005 |
+| **Headquarters** | Houston, TX |
+| **Employees** | 5,000+ |
+| **Annual Revenue** | $2.5 Billion |
+| **Store Locations** | 120+ across 35 US states |
+| **E-commerce Launch** | 2015 |
+| **Product Categories** | Electronics, Home & Kitchen, Office Supplies, Furniture, Technology Accessories |
+
+### 2.2 Organizational Structure
+
+```
+CEO
+├── CFO (Finance)
+├── COO (Operations)
+│   ├── VP Sales
+│   │   ├── Regional Managers (4 regions)
+│   │   └── Store Managers (120+)
+│   ├── VP Supply Chain
+│   │   ├── Procurement
+│   │   └── Logistics
+│   └── VP E-commerce
+├── CMO (Marketing)
+├── CTO (Technology)
+│   └── BI & Analytics Team ← (This project)
+└── CHRO (Human Resources)
+```
+
+### 2.3 Current State Assessment
+
+| Area | Current State | Pain Points |
+|------|--------------|-------------|
+| Reporting | Excel + Crystal Reports | Manual, slow, inconsistent |
+| Data Access | Direct database queries | Requires SQL skills |
+| KPI Tracking | Monthly spreadsheets | Stale data, no drill-down |
+| Cross-channel | Separate systems | No unified view |
+| Security | File-based access | No row-level control |
+
+---
+
+## 3. Business Objectives
+
+### 3.1 Primary Objectives
+
+| ID | Objective | Priority |
+|----|-----------|----------|
+| OBJ-01 | Provide a single source of truth for all retail metrics | Critical |
+| OBJ-02 | Enable daily data availability (< 24 hour latency) | Critical |
+| OBJ-03 | Support self-service analytics for business users | High |
+| OBJ-04 | Implement enterprise-grade security with RLS | High |
+| OBJ-05 | Reduce manual reporting effort by 75% | High |
+| OBJ-06 | Enable cross-channel (store + e-commerce) analysis | Medium |
+| OBJ-07 | Support mobile access for field managers | Medium |
+
+### 3.2 Strategic Alignment
+
+This project aligns with HPE Retail's 2026-2028 strategic pillars:
+1. **Data-Driven Culture** — Empower all levels with actionable insights
+2. **Operational Excellence** — Optimize inventory, reduce waste
+3. **Customer Centricity** — Understand and serve customers better
+4. **Digital Transformation** — Modernize legacy systems
+
+---
+
+## 4. Scope
+
+### 4.1 In Scope
+
+| # | Item |
+|---|------|
+| 1 | Data warehouse design and implementation (SQL Server) |
+| 2 | ETL pipeline development (Landing → Staging → Warehouse) |
+| 3 | Star Schema data modeling (Facts + Dimensions) |
+| 4 | Power BI semantic model development |
+| 5 | 9 interactive dashboards (Executive, Sales, Customer, Inventory, Store, Product, Finance, Regional, Shipping) |
+| 6 | 100+ DAX measures covering all business KPIs |
+| 7 | Row-Level Security (Static + Dynamic) |
+| 8 | Power BI Service deployment |
+| 9 | Scheduled & Incremental Refresh |
+| 10 | Documentation (BRD, TDD, User Guide) |
+
+### 4.2 Out of Scope
+
+| # | Item | Reason |
+|---|------|--------|
+| 1 | Real-time streaming analytics | Phase 2 initiative |
+| 2 | Predictive/ML models | Separate data science project |
+| 3 | Source system modifications | Owned by application teams |
+| 4 | Data governance framework | Enterprise-wide initiative |
+| 5 | SAP/ERP integration | Requires separate integration project |
+| 6 | Custom application development | BI-only scope |
+
+---
+
+## 5. Business Model
+
+### 5.1 Sales Channels
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    HPE RETAIL DIVISION                           │
+├───────────────────────────┬─────────────────────────────────────┤
+│     BRICK & MORTAR        │          E-COMMERCE                 │
+│     (60% of Revenue)      │          (40% of Revenue)           │
+├───────────────────────────┼─────────────────────────────────────┤
+│ • 120+ retail stores      │ • hperetail.com                     │
+│ • Walk-in customers       │ • Mobile app                        │
+│ • In-store associates     │ • 3 fulfillment centers             │
+│ • Regional management     │ • Same-day/next-day delivery        │
+│ • In-store pickup (BOPIS) │ • 3rd party marketplace             │
+└───────────────────────────┴─────────────────────────────────────┘
+```
+
+### 5.2 Product Categories
+
+| Category | % of Revenue | Avg Margin | Seasonality |
+|----------|-------------|------------|-------------|
+| Electronics | 35% | 22% | Q4 (Holiday) |
+| Home & Kitchen | 25% | 38% | Q2-Q3 |
+| Office Supplies | 20% | 45% | Q1, Q3 (Back-to-school) |
+| Furniture | 12% | 30% | Even |
+| Technology Accessories | 8% | 55% | Q4 (Holiday) |
+
+### 5.3 Customer Segments
+
+| Segment | Description | % of Customers | Avg CLV |
+|---------|------------|---------------|---------|
+| Enterprise | B2B corporate accounts | 15% | $15,000 |
+| Small Business | SMB purchases | 25% | $3,500 |
+| Consumer Premium | High-value individual buyers | 20% | $2,000 |
+| Consumer Standard | Regular individual buyers | 40% | $800 |
+
+---
+
+## 6. Revenue Model
+
+### 6.1 Revenue Streams
+
+| Stream | Description | % of Total Revenue | Growth Trend |
+|--------|------------|-------------------|--------------|
+| Direct Product Sales | Retail markup on goods | 75% | Stable |
+| Extended Warranties | Service plans | 10% | Growing |
+| Delivery/Shipping Fees | E-commerce shipping charges | 8% | Growing |
+| Membership Program | Annual premium membership | 5% | Growing |
+| Vendor Partnerships | Co-marketing & placement fees | 2% | Stable |
+
+### 6.2 Cost Structure
+
+| Cost Category | % of Revenue |
+|--------------|-------------|
+| Cost of Goods Sold (COGS) | 62% |
+| Store Operations (Rent, Utilities, Staff) | 15% |
+| Logistics & Shipping | 8% |
+| Marketing | 5% |
+| Technology & IT | 4% |
+| Corporate Overhead | 3% |
+| **Net Margin** | **3%** → Target: **12%** |
+
+---
+
+## 7. Key Performance Indicators
+
+### 7.1 Financial KPIs
+
+| KPI ID | KPI Name | Business Definition | Calculation | Target | Owner |
+|--------|----------|-------------------|-------------|--------|-------|
+| F-01 | Total Revenue | All sales across channels | SUM(OrderAmount) | $2.5B/year | CFO |
+| F-02 | Gross Profit | Revenue minus cost of goods | Revenue - COGS | 35%+ margin | CFO |
+| F-03 | Net Profit | Bottom line after all expenses | Revenue - All Costs | 12%+ margin | CFO |
+| F-04 | Revenue Growth YoY | Year-over-year revenue change | (CY - PY) / PY | 8%+ | VP Sales |
+| F-05 | Average Order Value | Revenue per transaction | Revenue / Orders | $150+ | VP Sales |
+| F-06 | Revenue Per Store | Average store productivity | Revenue / Store Count | $15M+ | VP Sales |
+
+### 7.2 Operational KPIs
+
+| KPI ID | KPI Name | Business Definition | Calculation | Target | Owner |
+|--------|----------|-------------------|-------------|--------|-------|
+| O-01 | Inventory Turnover | How quickly inventory sells | COGS / Avg Inventory | 8x+/year | VP Supply Chain |
+| O-02 | Days of Inventory | Days of stock on hand | 365 / Inventory Turnover | < 45 days | VP Supply Chain |
+| O-03 | Stockout Rate | % of SKUs out of stock | Out-of-stock SKUs / Total SKUs | < 2% | VP Supply Chain |
+| O-04 | On-Time Delivery | Orders delivered on schedule | On-time / Total Deliveries | 95%+ | VP Supply Chain |
+| O-05 | Return Rate | % of orders returned | Returns / Total Orders | < 5% | VP Sales |
+| O-06 | Fill Rate | % of orders fully fulfilled | Fulfilled / Total Orders | 98%+ | VP Supply Chain |
+
+### 7.3 Customer KPIs
+
+| KPI ID | KPI Name | Business Definition | Calculation | Target | Owner |
+|--------|----------|-------------------|-------------|--------|-------|
+| C-01 | Customer Acquisition Cost | Cost to acquire new customer | Marketing Spend / New Customers | < $45 | CMO |
+| C-02 | Customer Lifetime Value | Total value over relationship | Avg Order * Frequency * Lifespan | $1,200+ | CMO |
+| C-03 | Retention Rate | Returning customers | Returning / Total Customers | 60%+ | CMO |
+| C-04 | Repeat Purchase Rate | Customers buying again | Repeat Buyers / Total Customers | 40%+ | CMO |
+| C-05 | Net Promoter Score | Customer satisfaction | Promoters - Detractors | 70+ | CMO |
+
+### 7.4 Employee KPIs
+
+| KPI ID | KPI Name | Business Definition | Calculation | Target | Owner |
+|--------|----------|-------------------|-------------|--------|-------|
+| E-01 | Sales Per Associate | Revenue per employee | Revenue / Headcount | $500K+/year | VP Sales |
+| E-02 | Conversion Rate | Store visitors who purchase | Transactions / Foot Traffic | 25%+ | VP Sales |
+| E-03 | Avg Transaction Size | Revenue per transaction per associate | Revenue / Transactions | $150+ | Store Managers |
+
+---
+
+## 8. Stakeholder Analysis
+
+### 8.1 Stakeholder Matrix
+
+| Stakeholder | Role | Interest Level | Influence Level | Engagement Strategy |
+|-------------|------|---------------|----------------|-------------------|
+| CEO | Executive Sponsor | High | High | Monthly executive briefings |
+| CFO | Financial Oversight | High | High | Weekly P&L dashboard review |
+| VP Sales | Primary Consumer | High | High | Daily dashboard user, weekly feedback |
+| Regional Managers (4) | Operational Users | High | Medium | Training sessions, daily usage |
+| Store Managers (120+) | Field Users | Medium | Low | Self-service with RLS |
+| VP Supply Chain | Operational Consumer | High | Medium | Weekly inventory reviews |
+| CMO | Marketing Consumer | Medium | Medium | Monthly customer insights |
+| IT Director | Technical Owner | Medium | High | Architecture approval, support |
+| Data Analysts (6) | Power Users | High | Low | Advanced training, DAX development |
+| Finance Team (10) | Report Consumers | High | Medium | Scheduled report delivery |
+
+### 8.2 Reporting Requirements by Stakeholder
+
+| Stakeholder | Dashboard(s) | Key Metrics | Refresh | Access Level |
+|-------------|-------------|-------------|---------|-------------|
+| CEO/CFO | Executive | Revenue, Profit, Growth | Weekly | All data |
+| VP Sales | Sales, Regional | Sales by region/product/channel | Daily | All data |
+| Regional Managers | Regional, Store | Region-specific performance | Daily | Region only (RLS) |
+| Store Managers | Store | Store-level KPIs | Daily | Own store only (RLS) |
+| VP Supply Chain | Inventory, Shipping | Stock levels, delivery | Daily | All data |
+| Category Managers | Product | Product performance, margins | Weekly | All data |
+| CMO | Customer | Segments, acquisition, retention | Weekly | All data |
+| Finance Team | Finance | Budget vs Actual, forecasts | Monthly | All data |
+
+---
+
+## 9. Functional Requirements
+
+### 9.1 Dashboard Requirements
+
+| FR ID | Requirement | Description | Priority | Dashboard |
+|-------|------------|-------------|----------|-----------|
+| FR-01 | Sales Overview | Total sales, orders, AOV by date range | P1 | Sales |
+| FR-02 | Time Intelligence | YoY, QoQ, MoM comparisons for all metrics | P1 | All |
+| FR-03 | Geographic Drill-Down | Region → State → City → Store hierarchy | P1 | Regional |
+| FR-04 | Product Analysis | Top/Bottom N products by revenue, margin, qty | P1 | Product |
+| FR-05 | Customer Segmentation | New vs Returning vs Lapsed analysis | P2 | Customer |
+| FR-06 | Inventory Monitoring | Stock levels, aging, stockout alerts | P2 | Inventory |
+| FR-07 | Return Analysis | Returns by category, reason, trend | P2 | Product |
+| FR-08 | Supplier Scorecard | On-time delivery, quality metrics | P2 | Inventory |
+| FR-09 | Employee Performance | Sales per associate, conversion | P3 | Store |
+| FR-10 | Shipping Performance | On-time rate, avg delivery days | P2 | Shipping |
+| FR-11 | Profitability Analysis | Margin by product, category, store | P1 | Finance |
+| FR-12 | Executive Summary | High-level KPIs with trend indicators | P1 | Executive |
+| FR-13 | Channel Comparison | Store vs E-commerce performance | P1 | Sales |
+| FR-14 | Forecasting | Revenue forecast (3-month rolling) | P3 | Finance |
+| FR-15 | ABC Analysis | Product classification by revenue contribution | P2 | Product |
+
+### 9.2 Interactivity Requirements
+
+| FR ID | Requirement | Description | Priority |
+|-------|------------|-------------|----------|
+| FR-20 | Cross-filtering | All visuals must cross-filter on selection | P1 |
+| FR-21 | Drill-through | Click on entity to see detail page | P1 |
+| FR-22 | Custom Tooltips | Hover for additional context | P2 |
+| FR-23 | Bookmarks | Saved views for common analysis | P2 |
+| FR-24 | Dynamic Titles | Chart titles reflect active filters | P2 |
+| FR-25 | Export Capability | Export to Excel, PDF, PowerPoint | P1 |
+| FR-26 | Mobile Layout | Responsive design for mobile app | P3 |
+| FR-27 | Navigation | Button-based page navigation | P1 |
+| FR-28 | Field Parameters | Dynamic measure/dimension switching | P2 |
+
+### 9.3 Data Requirements
+
+| FR ID | Requirement | Description | Priority |
+|-------|------------|-------------|----------|
+| FR-30 | Historical Data | Minimum 3 years of historical data | P1 |
+| FR-31 | Daily Granularity | Transaction-level detail available | P1 |
+| FR-32 | Date Table | Complete calendar with fiscal year support | P1 |
+| FR-33 | Slowly Changing Dimensions | Track changes to customer/product attributes | P2 |
+| FR-34 | Data Lineage | Traceability from source to report | P2 |
+
+---
+
+## 10. Non-Functional Requirements
+
+### 10.1 Performance
+
+| NFR ID | Requirement | Target | Measurement |
+|--------|------------|--------|-------------|
+| NFR-01 | Dashboard load time | < 3 seconds | Time from open to fully rendered |
+| NFR-02 | Visual interaction response | < 1 second | Time for cross-filter to apply |
+| NFR-03 | Data refresh duration | < 30 minutes | Full refresh window |
+| NFR-04 | Concurrent users | 500+ | Simultaneous dashboard viewers |
+| NFR-05 | Query response time | < 5 seconds | Complex DAX measure evaluation |
+
+### 10.2 Availability & Reliability
+
+| NFR ID | Requirement | Target |
+|--------|------------|--------|
+| NFR-10 | System availability | 99.5% uptime |
+| NFR-11 | Planned maintenance window | Sundays 2-6 AM ET |
+| NFR-12 | Recovery Point Objective (RPO) | 24 hours |
+| NFR-13 | Recovery Time Objective (RTO) | 4 hours |
+| NFR-14 | Data refresh SLA | Completed by 6:00 AM ET daily |
+
+### 10.3 Scalability
+
+| NFR ID | Requirement | Target |
+|--------|------------|--------|
+| NFR-20 | Data volume growth | Support 20% annual growth |
+| NFR-21 | User growth | Scale to 1,000 users within 2 years |
+| NFR-22 | Dataset size | < 1 GB (Power BI Pro limit) |
+| NFR-23 | Historical retention | 5 years rolling |
+
+### 10.4 Security & Compliance
+
+| NFR ID | Requirement | Target |
+|--------|------------|--------|
+| NFR-30 | Authentication | Azure Active Directory SSO |
+| NFR-31 | Authorization | Row-Level Security by store/region |
+| NFR-32 | Data classification | Internal use only |
+| NFR-33 | Audit logging | All access logged for 1 year |
+| NFR-34 | PII protection | Customer PII masked in reports |
+| NFR-35 | Compliance | SOX, GDPR (where applicable) |
+
+### 10.5 Usability
+
+| NFR ID | Requirement | Target |
+|--------|------------|--------|
+| NFR-40 | Training requirement | < 2 hours for business users |
+| NFR-41 | Accessibility | WCAG 2.1 AA compliance |
+| NFR-42 | Browser support | Edge, Chrome (latest 2 versions) |
+| NFR-43 | Mobile support | Power BI Mobile iOS/Android |
+
+---
+
+## 11. Data Requirements
+
+### 11.1 Source Systems
+
+| Source | Data | Format | Volume | Refresh |
+|--------|------|--------|--------|---------|
+| POS System | Transactions | CSV/Database | 500K+ records/year | Daily |
+| E-commerce Platform | Online Orders | API/CSV | 300K+ records/year | Daily |
+| ERP (SAP) | Products, Inventory | Database | 50K SKUs | Daily |
+| CRM | Customers | Database | 1M+ records | Daily |
+| HR System | Employees | CSV | 5,000 records | Weekly |
+| Supplier Portal | Suppliers, Purchase Orders | CSV | 500 suppliers | Weekly |
+
+### 11.2 Data Entities
+
+| Entity | Description | Estimated Records | Type |
+|--------|------------|-------------------|------|
+| Orders | Sales transactions | 500,000+ | Fact |
+| Order Details | Line-item details | 2,000,000+ | Fact |
+| Returns | Returned items | 25,000+ | Fact |
+| Inventory Snapshots | Daily stock levels | 1,000,000+ | Fact |
+| Products | Product catalog | 10,000+ | Dimension |
+| Customers | Customer profiles | 200,000+ | Dimension |
+| Stores | Physical locations | 120+ | Dimension |
+| Employees | Staff records | 5,000+ | Dimension |
+| Suppliers | Vendor information | 500+ | Dimension |
+| Regions | Geographic hierarchy | 4 regions, 35 states | Dimension |
+| Calendar | Date dimension | 1,826 days (5 years) | Dimension |
+| Categories | Product taxonomy | 50+ | Dimension |
+
+### 11.3 Data Quality Requirements
+
+| Dimension | Requirement | Target |
+|-----------|------------|--------|
+| Completeness | All required fields populated | > 98% |
+| Accuracy | Data matches source system | > 99.5% |
+| Timeliness | Data available by SLA | 6:00 AM ET |
+| Uniqueness | No duplicate transactions | 100% |
+| Consistency | Metrics match across reports | 100% |
+| Validity | All values within expected ranges | > 99% |
+
+---
+
+## 12. Security Requirements
+
+### 12.1 Row-Level Security Model
+
+```
+┌─────────────────────────────────────────────┐
+│              SECURITY HIERARCHY              │
+├─────────────────────────────────────────────┤
+│ Level 1: Executive    → All Regions          │
+│ Level 2: VP Sales     → All Regions          │
+│ Level 3: Regional Mgr → Assigned Region      │
+│ Level 4: Store Mgr    → Assigned Store Only  │
+│ Level 5: Analyst      → Assigned Department  │
+└─────────────────────────────────────────────┘
+```
+
+### 12.2 RLS Implementation
+
+| Role | Filter Expression | Users |
+|------|------------------|-------|
+| Executive | No filter (all data) | CEO, CFO, CTO |
+| Regional - East | [Region] = "East" | East Regional Manager |
+| Regional - West | [Region] = "West" | West Regional Manager |
+| Regional - North | [Region] = "North" | North Regional Manager |
+| Regional - South | [Region] = "South" | South Regional Manager |
+| Store Level | [StoreID] = USERPRINCIPALNAME() lookup | 120+ Store Managers |
+
+### 12.3 Data Sensitivity Classification
+
+| Data Element | Classification | Handling |
+|-------------|---------------|----------|
+| Revenue figures | Confidential | RLS protected |
+| Customer names | PII | Masked in reports |
+| Customer emails | PII | Not included in model |
+| Employee salaries | Restricted | Not in scope |
+| Product costs | Confidential | Limited to Finance role |
+
+---
+
+## 13. Assumptions & Constraints
+
+### 13.1 Assumptions
+
+| # | Assumption |
+|---|-----------|
+| 1 | Source data is available in CSV format from Kaggle dataset |
+| 2 | SQL Server 2019+ is available for data warehouse |
+| 3 | Power BI Pro licenses are available for all report consumers |
+| 4 | On-Premises Data Gateway is installed and configured |
+| 5 | Azure Active Directory is available for authentication |
+| 6 | Business users have basic data literacy |
+| 7 | Data volume fits within Power BI Pro 1 GB limit |
+
+### 13.2 Constraints
+
+| # | Constraint | Impact |
+|---|-----------|--------|
+| 1 | Power BI Pro dataset limit: 1 GB | Requires data optimization |
+| 2 | Scheduled refresh: 8x per day (Pro) | Daily refresh only |
+| 3 | Single developer (portfolio project) | Sequential phase delivery |
+| 4 | Kaggle data (not real POS data) | Simulated scenarios |
+| 5 | No real Active Directory | RLS tested locally |
+
+---
+
+## 14. Risks & Mitigation
+
+| Risk ID | Risk | Probability | Impact | Mitigation |
+|---------|------|-------------|--------|-----------|
+| R-01 | Dataset doesn't cover all required entities | Medium | High | Supplement with generated data |
+| R-02 | Power BI model exceeds 1 GB | Low | High | Aggregation tables, remove unused columns |
+| R-03 | DAX performance issues with complex measures | Medium | Medium | Optimize patterns, use variables |
+| R-04 | Scope creep during development | High | Medium | Strict phase gates, backlog management |
+| R-05 | RLS cannot be fully tested without AAD | Low | Low | Document testing approach, use test users |
+
+---
+
+## 15. Success Criteria
+
+### 15.1 Project Success Metrics
+
+| # | Criterion | Measurement | Target |
+|---|-----------|-------------|--------|
+| 1 | All 9 dashboards delivered | Dashboard count | 9/9 |
+| 2 | All P1 requirements met | Requirement coverage | 100% |
+| 3 | Dashboard loads in < 3 seconds | Performance test | Pass |
+| 4 | RLS correctly restricts data | Security test | Pass |
+| 5 | DAX measures produce correct results | Validation test | 100% |
+| 6 | Documentation complete | Doc review | All artifacts |
+| 7 | GitHub repository organized | Peer review | Professional standard |
+
+### 15.2 Business Success Metrics (Simulated)
+
+| # | Metric | Before | After | Improvement |
+|---|--------|--------|-------|-------------|
+| 1 | Report delivery time | 3-5 days | Same day | 80% faster |
+| 2 | Analyst manual effort | 40 hrs/week | 10 hrs/week | 75% reduction |
+| 3 | Metric consistency | Multiple versions | Single source | 100% aligned |
+| 4 | Self-service adoption | 0% | 70%+ | New capability |
+| 5 | Decision-making speed | Weekly cadence | Daily | 5x faster |
+
+---
+
+## 16. Sign-Off
+
+| Role | Name | Signature | Date |
+|------|------|-----------|------|
+| Project Sponsor | Chief Data Officer | _________________ | ____/____/____ |
+| Business Owner | VP of Retail Operations | _________________ | ____/____/____ |
+| Technical Lead | BI Architect | _________________ | ____/____/____ |
+| Security | CISO Representative | _________________ | ____/____/____ |
+| IT Operations | IT Director | _________________ | ____/____/____ |
+
+---
+
+## Appendix A: Glossary
+
+| Term | Definition |
+|------|-----------|
+| AOV | Average Order Value — Revenue divided by number of orders |
+| BOPIS | Buy Online, Pick Up In Store |
+| CAC | Customer Acquisition Cost |
+| CLV | Customer Lifetime Value |
+| COGS | Cost of Goods Sold |
+| DAX | Data Analysis Expressions (Power BI formula language) |
+| ETL | Extract, Transform, Load |
+| KPI | Key Performance Indicator |
+| RLS | Row-Level Security |
+| SCD | Slowly Changing Dimension |
+| SKU | Stock Keeping Unit |
+| YoY | Year over Year |
+| QoQ | Quarter over Quarter |
+| MoM | Month over Month |
+
+---
+
+## Appendix B: Related Documents
+
+| Document | Location | Status |
+|----------|----------|--------|
+| Technical Design Document (TDD) | /Documentation/ | Phase 3 |
+| Data Dictionary | /Documentation/ | Phase 3 |
+| Power BI Style Guide | /Documentation/ | Phase 6 |
+| User Guide | /Documentation/ | Phase 12 |
+| Deployment Guide | /Documentation/ | Phase 9 |
+
+---
+
+*End of Document*
