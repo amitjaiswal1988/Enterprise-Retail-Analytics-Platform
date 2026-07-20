@@ -139,7 +139,7 @@ RETURN_REASONS = [
     "Arrived Late", "Better Price Found", "Duplicate Order",
 ]
 RETURN_CONDITIONS = ["New", "Open Box", "Damaged", "Used"]
-CARRIERS = ["FedEx", "UPS", "USPS", "DHL", "NovaMart Logistics"]
+CARRIERS = ["FedEx", "UPS", "USPS", "DHL", "ShopStar Logistics"]
 SHIP_MODES = ["Standard", "Express", "Same Day", "Economy"]
 
 CUSTOMER_SEGMENTS = ["Consumer Standard", "Consumer Premium", "Small Business", "Enterprise"]
@@ -184,7 +184,7 @@ class RetailDataGenerator:
     def generate_all(self) -> None:
         """Execute full generation pipeline in dependency order."""
         print(f"{'='*60}")
-        print(f"  NovaMart Retail - Synthetic Data Generator")
+        print(f"  ShopStar Retail - Synthetic Data Generator")
         print(f"  Profile: {self.profile.name}")
         print(f"  Output:  {self.output_dir.resolve()}")
         print(f"{'='*60}\n")
@@ -215,7 +215,7 @@ class RetailDataGenerator:
         """Generate regions.csv — 4 US regions."""
         print("[1/12] Generating regions.csv ...")
         self._regions_df = pd.DataFrame(REGIONS)
-        self._regions_df.to_csv(self.output_dir / "regions.csv", index=False)
+        self._regions_df.to_csv(self.output_dir / "regions.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._regions_df)} rows")
 
     def _gen_categories(self) -> None:
@@ -249,7 +249,7 @@ class RetailDataGenerator:
             idx = int(self.rng.integers(0, len(rows)))
             rows[idx]["CategoryName"] = rows[idx]["CategoryName"].upper()
         self._categories_df = pd.DataFrame(rows)
-        self._categories_df.to_csv(self.output_dir / "categories.csv", index=False)
+        self._categories_df.to_csv(self.output_dir / "categories.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._categories_df)} rows")
 
     def _gen_suppliers(self) -> None:
@@ -267,7 +267,7 @@ class RetailDataGenerator:
                 "ContactEmail": self.fake.company_email(),
             })
         self._suppliers_df = pd.DataFrame(rows)
-        self._suppliers_df.to_csv(self.output_dir / "suppliers.csv", index=False)
+        self._suppliers_df.to_csv(self.output_dir / "suppliers.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._suppliers_df)} rows")
 
 
@@ -293,7 +293,7 @@ class RetailDataGenerator:
                 "SupplierID": int(self.rng.integers(1, self.profile.num_suppliers + 1)),
             })
         self._products_df = pd.DataFrame(rows)
-        self._products_df.to_csv(self.output_dir / "products.csv", index=False)
+        self._products_df.to_csv(self.output_dir / "products.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._products_df)} rows")
 
     def _gen_stores(self) -> None:
@@ -309,7 +309,7 @@ class RetailDataGenerator:
             open_year = int(self.rng.integers(2005, 2022))
             rows.append({
                 "StoreID": i,
-                "StoreName": f"NovaMart #{i:04d}",
+                "StoreName": f"ShopStar #{i:04d}",
                 "City": self.fake.city(),
                 "State": state,
                 "Region": region,
@@ -318,7 +318,7 @@ class RetailDataGenerator:
                 "SquareFootage": int(self.rng.integers(8000, 65000)),
             })
         self._stores_df = pd.DataFrame(rows)
-        self._stores_df.to_csv(self.output_dir / "stores.csv", index=False)
+        self._stores_df.to_csv(self.output_dir / "stores.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._stores_df)} rows")
 
 
@@ -348,7 +348,7 @@ class RetailDataGenerator:
                 "ManagerID": manager_id,
             })
         self._employees_df = pd.DataFrame(rows)
-        self._employees_df.to_csv(self.output_dir / "employees.csv", index=False)
+        self._employees_df.to_csv(self.output_dir / "employees.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._employees_df)} rows")
 
     def _gen_customers(self) -> None:
@@ -376,7 +376,7 @@ class RetailDataGenerator:
                 "Region": region,
             })
         self._customers_df = pd.DataFrame(rows)
-        self._customers_df.to_csv(self.output_dir / "customers.csv", index=False)
+        self._customers_df.to_csv(self.output_dir / "customers.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._customers_df)} rows")
 
 
@@ -438,7 +438,7 @@ class RetailDataGenerator:
             dupes = self._orders_df.iloc[dupe_indices].copy()
             self._orders_df = pd.concat([self._orders_df, dupes], ignore_index=True)
 
-        self._orders_df.to_csv(self.output_dir / "orders.csv", index=False)
+        self._orders_df.to_csv(self.output_dir / "orders.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._orders_df)} rows (includes {num_dupes} intentional duplicates)")
 
 
@@ -491,7 +491,7 @@ class RetailDataGenerator:
                 detail_id += 1
 
         self._order_details_df = pd.DataFrame(rows)
-        self._order_details_df.to_csv(self.output_dir / "order_details.csv", index=False)
+        self._order_details_df.to_csv(self.output_dir / "order_details.csv", index=False, encoding="utf-8")
         print(f"        → {len(self._order_details_df)} rows")
 
 
@@ -526,7 +526,7 @@ class RetailDataGenerator:
             })
 
         returns_df = pd.DataFrame(rows)
-        returns_df.to_csv(self.output_dir / "returns.csv", index=False)
+        returns_df.to_csv(self.output_dir / "returns.csv", index=False, encoding="utf-8")
         print(f"        → {len(returns_df)} rows")
 
     def _gen_shipping(self) -> None:
@@ -558,7 +558,7 @@ class RetailDataGenerator:
             })
 
         shipping_df = pd.DataFrame(rows)
-        shipping_df.to_csv(self.output_dir / "shipping.csv", index=False)
+        shipping_df.to_csv(self.output_dir / "shipping.csv", index=False, encoding="utf-8")
         print(f"        → {len(shipping_df)} rows")
 
 
@@ -598,7 +598,7 @@ class RetailDataGenerator:
                 inv_id += 1
 
         inventory_df = pd.DataFrame(rows)
-        inventory_df.to_csv(self.output_dir / "inventory.csv", index=False)
+        inventory_df.to_csv(self.output_dir / "inventory.csv", index=False, encoding="utf-8")
         print(f"        → {len(inventory_df)} rows")
 
 
@@ -609,7 +609,7 @@ class RetailDataGenerator:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="NovaMart Retail - Synthetic Dataset Generator",
+        description="ShopStar Retail - Synthetic Dataset Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Profiles:

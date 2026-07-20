@@ -44,62 +44,62 @@ def generate_dataset():
 
 @pytest.fixture(scope="session")
 def regions():
-    return pd.read_csv(DATASET_DIR / "regions.csv")
+    return pd.read_csv(DATASET_DIR / "regions.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def categories():
-    return pd.read_csv(DATASET_DIR / "categories.csv")
+    return pd.read_csv(DATASET_DIR / "categories.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def suppliers():
-    return pd.read_csv(DATASET_DIR / "suppliers.csv")
+    return pd.read_csv(DATASET_DIR / "suppliers.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def products():
-    return pd.read_csv(DATASET_DIR / "products.csv")
+    return pd.read_csv(DATASET_DIR / "products.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def stores():
-    return pd.read_csv(DATASET_DIR / "stores.csv")
+    return pd.read_csv(DATASET_DIR / "stores.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def employees():
-    return pd.read_csv(DATASET_DIR / "employees.csv")
+    return pd.read_csv(DATASET_DIR / "employees.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def customers():
-    return pd.read_csv(DATASET_DIR / "customers.csv")
+    return pd.read_csv(DATASET_DIR / "customers.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def orders():
-    return pd.read_csv(DATASET_DIR / "orders.csv")
+    return pd.read_csv(DATASET_DIR / "orders.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def order_details():
-    return pd.read_csv(DATASET_DIR / "order_details.csv")
+    return pd.read_csv(DATASET_DIR / "order_details.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def returns():
-    return pd.read_csv(DATASET_DIR / "returns.csv")
+    return pd.read_csv(DATASET_DIR / "returns.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def shipping():
-    return pd.read_csv(DATASET_DIR / "shipping.csv")
+    return pd.read_csv(DATASET_DIR / "shipping.csv", encoding="utf-8")
 
 
 @pytest.fixture(scope="session")
 def inventory():
-    return pd.read_csv(DATASET_DIR / "inventory.csv")
+    return pd.read_csv(DATASET_DIR / "inventory.csv", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
