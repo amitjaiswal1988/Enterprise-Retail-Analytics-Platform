@@ -201,7 +201,7 @@ CREATE TABLE warehouse.DimStore (
                             WHEN SquareFootage >= 20000 THEN 'Medium'
                             ELSE 'Small'
                         END) PERSISTED,
-    YearsOpen           AS (DATEDIFF(YEAR, OpenDate, GETDATE())) PERSISTED,
+    YearsOpen           AS (DATEDIFF(YEAR, OpenDate, GETDATE())),
     _LoadedAt           DATETIME2       DEFAULT GETDATE()
 );
 GO
@@ -235,7 +235,7 @@ CREATE TABLE warehouse.DimEmployee (
     Salary              INT             NOT NULL,
     ManagerID           INT             NULL,
     -- Derived attributes
-    TenureYears         AS (DATEDIFF(YEAR, HireDate, GETDATE())) PERSISTED,
+    TenureYears         AS (DATEDIFF(YEAR, HireDate, GETDATE())),
     SalaryBand          AS (CASE
                             WHEN Salary >= 100000 THEN 'Senior ($100K+)'
                             WHEN Salary >= 60000 THEN 'Mid ($60-100K)'
@@ -274,7 +274,7 @@ CREATE TABLE warehouse.DimCustomer (
     State               NVARCHAR(50)    NOT NULL,
     Region              VARCHAR(50)     NOT NULL,
     -- Derived attributes
-    CustomerTenureYears AS (DATEDIFF(YEAR, JoinDate, GETDATE())) PERSISTED,
+    CustomerTenureYears AS (DATEDIFF(YEAR, JoinDate, GETDATE())),
     JoinYear            AS (YEAR(JoinDate)) PERSISTED,
     _LoadedAt           DATETIME2       DEFAULT GETDATE()
 );
