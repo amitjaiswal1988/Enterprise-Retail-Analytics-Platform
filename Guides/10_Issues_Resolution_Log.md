@@ -490,6 +490,43 @@ Post-fix: 120,796 store sales / 80,486 online (correct ~60/40 split).
 
 ---
 
+### ISS-013: PERCENTILE_CONT Mixed With Scalar Aggregates (Msg 8120)
+
+| Field | Details |
+|-------|---------|
+| **ID** | ISS-013 |
+| **Severity** | Low |
+| **Category** | SQL / Practice Portfolio |
+| **Phase** | Phase 5.5 — 100-Query Portfolio |
+| **Reported** | Day 3 |
+| **Status** | ✅ Resolved |
+
+**Symptom:**
+Running `SQL_100_Queries_Portfolio.sql` failed at Query #08 with
+`Msg 8120 ... Column 'FactSales.LineTotal' is invalid in the select list because it is
+not contained in either an aggregate function or the GROUP BY clause.`
+
+**Root Cause:**
+`PERCENTILE_CONT(...) WITHIN GROUP (...) OVER ()` is a **window function** (returns a value
+per row), so it cannot share an ungrouped `SELECT` with **scalar aggregates**
+(`MIN`/`MAX`/`AVG`/`STDEV`), which collapse all rows to one. SQL Server rejects the mix.
+
+**Resolution:**
+Isolated the median in its own single-value subquery so the outer query stays a pure
+scalar-aggregate `SELECT`:
+```sql
+(SELECT CAST(MAX(MedianLine) AS DECIMAL(12,2)) FROM (
+    SELECT DISTINCT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY LineTotal) OVER () AS MedianLine
+    FROM warehouse.FactSales) m) AS MedianLine
+```
+Re-ran full script → **EXIT=0**, all 100 queries pass.
+
+**Prevention:**
+- Never mix window functions with scalar aggregates in one ungrouped `SELECT`.
+- Compute percentiles/medians in a separate subquery or CTE.
+
+---
+
 ## Lessons Learned
 
 | # | Lesson | Applied To |
@@ -515,7 +552,7 @@ Post-fix: 120,796 store sales / 80,486 online (correct ~60/40 split).
 | Metric | Value |
 |--------|-------|
 | Average time to resolve | < 15 minutes |
-| Issues requiring code change | 5 (ISS-008, 009, 010, 011, 012) |
+| Issues requiring code change | 6 (ISS-008, 009, 010, 011, 012, 013) |
 | Issues requiring environment fix only | 5 |
 | Issues requiring Git knowledge | 3 |
 | PRs created for fixes | 1 (PR #4) |

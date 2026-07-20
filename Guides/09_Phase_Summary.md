@@ -176,6 +176,8 @@ Warehouse populated: DimDate 2557, DimRegion 5, DimCategory 26, DimSupplier 101,
 | 5 | `8b70dea` | Landing bulk loader + Staging ETL (Phase 4) |
 | 6 | `1031b1b` | Warehouse star-schema ETL (Phase 5) |
 | 7 | `10f10aa` | 10 analytics views over the star schema (Phase 5) |
+| 8 | `8e77f2f` | README + Guides phase status update (Phase 3/4/5 complete) |
+| 9 | (this commit) | 100 SQL practice queries + 15 analytics views + Power BI Implementation Guide (Phase 5.5) |
 
 ---
 

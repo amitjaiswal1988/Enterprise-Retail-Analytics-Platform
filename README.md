@@ -151,6 +151,7 @@ python -m pytest tests/test_data_quality.py -v
 | 3 | Database Design (SQL Server) | ✅ Complete |
 | 4 | Data Cleaning (ETL) | ✅ Complete |
 | 5 | Data Warehouse (Star Schema) | ✅ Complete |
+| 5.5 | Analytics Views + SQL Practice + Power BI Guide | ✅ Complete |
 | 6 | Power BI Data Model | Pending |
 | 7 | Advanced DAX (100+ measures) | Pending |
 | 8 | Dashboard Development (9 dashboards) | Pending |
@@ -166,6 +167,9 @@ python -m pytest tests/test_data_quality.py -v
 ## Key Deliverables
 
 - Production-ready SQL Server Data Warehouse (Star Schema)
+- 15 Power BI consumption views (RFM, ABC, KPIs, RLS bridge)
+- 100 documented, DB-validated SQL interview-practice queries
+- Power BI Implementation Guide (connection → modeling → RLS → tuning)
 - Deterministic synthetic dataset generator with quality defects
 - 100+ Advanced DAX measures with documentation
 - 9 Professional Power BI dashboards

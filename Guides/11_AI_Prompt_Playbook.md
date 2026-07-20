@@ -375,6 +375,18 @@ git push origin main
 
 ---
 
+### Prompt P-025: 100 SQL Queries + Views + Power BI Guide
+
+| Field | Details |
+|-------|---------|
+| **When** | Phase 5.5 — interview-prep + Power BI readiness |
+| **Tool** | GitHub Copilot |
+| **Category** | 📊 Data / 📝 Docs |
+| **Prompt** | `add 100 SQL practice queries + 15 analytics views + Power BI implementation guide` |
+| **Result** | ✅ Success — SQL_100_Queries_Portfolio.sql (100 queries, validated EXIT=0), 07_Analytics_Views.sql (15 views live), PowerBI_Implementation_Guide.md, SQL_Practice_Guide.md. Fixed Q08 (PERCENTILE_CONT window fn cannot mix with scalar aggregates — isolated median in a subquery). |
+
+---
+
 ## Template for Future Prompts
 
 ```markdown
