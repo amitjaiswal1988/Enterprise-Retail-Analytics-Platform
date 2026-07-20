@@ -9,7 +9,7 @@
 | **Document ID** | LOG-ISSUES-2026-001 |
 | **Version** | 1.0 |
 | **Author** | BI Development Team |
-| **Last Updated** | July 20, 2026 |
+| **Last Updated** | July 21, 2026 |
 | **Purpose** | Track all issues encountered during setup, root cause, and resolution |
 | **Audience** | Developers, QA, Future team members |
 
@@ -19,11 +19,11 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Issues Logged | 9 |
-| Resolved | 9 |
+| Total Issues Logged | 12 |
+| Resolved | 12 |
 | Open | 0 |
-| Categories | Environment (4), Git (3), Encoding (1), Naming (1) |
-| Severity Breakdown | Critical: 2, Major: 4, Minor: 3 |
+| Categories | Environment (4), Git (3), Encoding (1), Naming (1), ETL/Data (3) |
+| Severity Breakdown | Critical: 3, Major: 6, Minor: 3 |
 
 ---
 
@@ -393,6 +393,103 @@ Global find-and-replace across all files:
 
 ---
 
+### ISS-010: `@@ROWCOUNT` Reset to 1 by Trailing `SELECT COUNT(*)`
+
+| Field | Details |
+|-------|---------|
+| **ID** | ISS-010 |
+| **Severity** | Major |
+| **Category** | ETL / Data |
+| **Phase** | Phase 4 — Staging ETL |
+| **Reported** | Day 2 |
+| **Status** | ✅ Resolved |
+
+**Symptom:**
+Staging load procs (`usp_Load_Customers/Orders/OrderDetails`) reported `RowsLoaded = 1`
+even though tens of thousands of rows were inserted.
+
+**Root Cause:**
+`@@ROWCOUNT` reflects the **last** statement executed. A `SELECT COUNT(*)` placed after
+the `INSERT` (for logging) reset `@@ROWCOUNT` to 1 before it was read.
+
+**Resolution:**
+Capture the row count into a variable **immediately** after the INSERT, before any other
+statement runs:
+```sql
+INSERT INTO staging.Customers (...) SELECT ... FROM landing.Customers;
+SET @RowsLoaded = @@ROWCOUNT;   -- capture FIRST, log later
+```
+
+**Prevention:**
+Never place any statement between an INSERT/UPDATE/DELETE and the `@@ROWCOUNT` read.
+
+---
+
+### ISS-011: Non-Idempotent Quarantine Table (Rows Accumulated on Re-run)
+
+| Field | Details |
+|-------|---------|
+| **ID** | ISS-011 |
+| **Severity** | Minor |
+| **Category** | ETL / Data |
+| **Phase** | Phase 4 — Staging ETL |
+| **Reported** | Day 2 |
+| **Status** | ✅ Resolved |
+
+**Symptom:**
+`staging.Quarantine` row count doubled (44 → 88) each time the master ETL proc re-ran.
+
+**Root Cause:**
+The master proc appended rejected rows to `Quarantine` but never cleared it first, so
+re-running the pipeline accumulated duplicate defect records.
+
+**Resolution:**
+Add `TRUNCATE TABLE staging.Quarantine;` at the start of
+`staging.usp_LoadAll_LandingToStaging` so every run starts clean (idempotent).
+
+**Prevention:**
+Every ETL target (including error/quarantine tables) must be reset at the start of a
+full-reload run so results are reproducible.
+
+---
+
+### ISS-012: Nullable-Int Float Strings Wiped All Store Assignments (CRITICAL)
+
+| Field | Details |
+|-------|---------|
+| **ID** | ISS-012 |
+| **Severity** | Critical |
+| **Category** | ETL / Data |
+| **Phase** | Phase 5 — Warehouse Load |
+| **Reported** | Day 2 |
+| **Status** | ✅ Resolved |
+
+**Symptom:**
+After the warehouse load, **all 201,282 sales rows** were routed to `StoreSK = -1`
+(Unknown store). Row counts looked fine — only the SK **distribution** revealed the bug.
+
+**Root Cause:**
+pandas stores nullable-integer columns (e.g. `StoreID`/`EmployeeID`, NULL for e-commerce
+orders) as **floats**, so the CSV/landing value became `'48.0'` instead of `'48'`.
+- `TRY_CAST('48.0' AS INT)` returns `NULL` → every store lookup failed.
+- SQL gotcha: `TRY_CAST('' AS FLOAT)` returns `0`, not `NULL`.
+
+**Resolution:**
+Two-step cast — to FLOAT first (handles `'48.0'`), then to INT, with `NULLIF` to protect
+empty strings:
+```sql
+TRY_CAST(TRY_CAST(NULLIF(LTRIM(RTRIM(col)), '') AS FLOAT) AS INT)
+```
+Applied to `usp_Load_Orders` (StoreID/EmployeeID) and `usp_Load_Employees` (ManagerID).
+Post-fix: 120,796 store sales / 80,486 online (correct ~60/40 split).
+
+**Prevention:**
+- Always **verify fact surrogate-key distributions**, not just row counts, after a load.
+- Treat nullable numeric CSV columns as potential float strings; use the FLOAT→INT cast.
+- Only nullable ID columns become floats; non-nullable IDs stay clean integers.
+
+---
+
 ## Lessons Learned
 
 | # | Lesson | Applied To |
@@ -406,6 +503,10 @@ Global find-and-replace across all files:
 | 7 | `git clean -fd .` deletes venv — be careful | Guide 08 |
 | 8 | Define naming conventions early and enforce globally | BRD Section |
 | 9 | PRs create a clear audit trail of all changes | Git Workflow |
+| 10 | Read `@@ROWCOUNT` immediately after DML — nothing in between | 06 ETL Procs |
+| 11 | Reset every ETL/quarantine target at start of a full reload | 06 ETL Procs |
+| 12 | Verify fact SK **distributions**, not just row counts | 07 Warehouse ETL |
+| 13 | pandas nullable ints become float strings (`'48.0'`) — cast FLOAT→INT | 06/07 ETL |
 
 ---
 
@@ -414,7 +515,7 @@ Global find-and-replace across all files:
 | Metric | Value |
 |--------|-------|
 | Average time to resolve | < 15 minutes |
-| Issues requiring code change | 2 (ISS-008, ISS-009) |
+| Issues requiring code change | 5 (ISS-008, 009, 010, 011, 012) |
 | Issues requiring environment fix only | 5 |
 | Issues requiring Git knowledge | 3 |
 | PRs created for fixes | 1 (PR #4) |

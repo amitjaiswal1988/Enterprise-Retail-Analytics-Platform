@@ -148,9 +148,9 @@ python -m pytest tests/test_data_quality.py -v
 |-------|------------|--------|
 | 1 | Business Understanding & BRD | ✅ Complete |
 | 2 | Dataset Selection & Generation | ✅ Complete |
-| 3 | Database Design (SQL Server) | Pending |
-| 4 | Data Cleaning (ETL) | Pending |
-| 5 | Data Warehouse (Star Schema) | Pending |
+| 3 | Database Design (SQL Server) | ✅ Complete |
+| 4 | Data Cleaning (ETL) | ✅ Complete |
+| 5 | Data Warehouse (Star Schema) | ✅ Complete |
 | 6 | Power BI Data Model | Pending |
 | 7 | Advanced DAX (100+ measures) | Pending |
 | 8 | Dashboard Development (9 dashboards) | Pending |

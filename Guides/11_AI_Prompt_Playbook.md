@@ -273,6 +273,80 @@ git push origin main
 
 ---
 
+## Phase 3-5 — Database, ETL & Warehouse (GitHub Copilot Agent, VS Code)
+
+### Prompt P-019: Build Database Schema & Tables
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, Start of Phase 3 |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📊 Data |
+| **Prompt** | "Create the RetailDW database with landing/staging/warehouse schemas and all DDL (landing, staging, star-schema dims + facts, indexes, FKs)" |
+| **Result** | ✅ Scripts 00–05 created; landing 12 / staging 13 / warehouse 11 tables verified |
+
+---
+
+### Prompt P-020: Load CSVs into Landing (Python)
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, Phase 4 start |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📊 Data |
+| **Prompt** | "Write a Python bulk loader for the 12 CSVs into landing.* using pandas + SQLAlchemy + pyodbc, idempotent" |
+| **Result** | ✅ `Python/load_landing.py` — 705,984 rows in ~30s |
+
+---
+
+### Prompt P-021: Staging ETL + Fix Bugs
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, Phase 4 |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 🔧 Fix + 📊 Data |
+| **Prompt** | "please check from github and fix fast and start next step, if you are writing query then create documents when/why/what mode with comments, everything I want in documented, as your are BI engineer and analytics" |
+| **Result** | ✅ 12 staging procs; fixed ISS-010 (@@ROWCOUNT) & ISS-011 (Quarantine); 705,735 staging rows. Commit `8b70dea` |
+
+---
+
+### Prompt P-022: Warehouse Star-Schema ETL
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, Phase 5 |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📊 Data + 🔧 Fix |
+| **Prompt** | "yes" (approval to build warehouse-load procedures) |
+| **Result** | ✅ `07_ETL_Staging_To_Warehouse.sql` (DimDate + 7 dims + 3 facts). Caught & fixed ISS-012 (nullable-int float bug). Revenue $720M. Commit `1031b1b` |
+
+---
+
+### Prompt P-023: Analytics Views
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, Phase 5 |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📊 Data + 📝 Docs |
+| **Prompt** | "yes" (approval to build the SQL analytics views) |
+| **Result** | ✅ `08_Analytics_Views.sql` — 10 views mapped to 9 dashboards + `Phase3_Analytics_Views.md`. Commit `10f10aa` |
+
+---
+
+### Prompt P-024: Project Rules & Doc Sync
+
+| Field | Details |
+|-------|---------|
+| **When** | Day 2, After Phase 5 |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs |
+| **Prompt** | "IMPORTANT RULES FOR ALL FUTURE WORK... parallel documentation, comments on every SQL line, phase status, git discipline, Power BI flow. Update README now." |
+| **Result** | ✅ README phases 3/4/5 → Complete; Guides 09/10/11 updated; pushed to GitHub |
+
+---
+
 ## Prompt Success Rate
 
 | Category | Total | Succeeded | Failed | Success Rate |
