@@ -47,6 +47,40 @@ Data Connectivity mode: Import
 - **Authentication:** *Windows* (matches how the ETL connects: `sqlcmd -S localhost -E`).
 - **Advanced options → SQL statement:** leave blank so **query folding** stays enabled (Section 2.4). Do NOT paste a hand-written SQL query here — select the views from the Navigator instead so the M engine can fold filters.
 
+### 1.2a Encryption / "certificate not trusted" fix (ODBC Driver 18)
+
+**WHAT:** On the first connect you may hit:
+> *"The certificate chain was issued by an authority that is not trusted."*
+
+**WHY:** Microsoft **ODBC Driver 18 / the SQL Server connector encrypt the
+connection by default** and then try to validate the server's TLS certificate.
+A local SQL Server uses a **self-signed** certificate that isn't in the trusted
+root store, so validation fails. (The same reason `sqlcmd` needs the `-C` flag:
+`sqlcmd -S localhost -E -C`.)
+
+**WHEN:** First time connecting Power BI Desktop (or after a driver upgrade) to a
+local / dev SQL Server without a CA-issued certificate.
+
+**HOW — Power BI Desktop:**
+1. Proceed through **Get Data → SQL Server → Windows auth → Connect**.
+2. When the **Encryption Support** dialog appears, either:
+   - Check **"Trust server certificate"** (if shown), **or**
+   - Click **OK / "I understand the risks"** to connect with encryption while
+     trusting the self-signed cert.
+3. If it instead throws the error outright, reopen the source via
+   **Transform Data → Data source settings → Edit permissions → Encryption**,
+   and set the connection to trust the server certificate.
+
+**Verify from the terminal (optional sanity check):**
+```bash
+# Works (trusts the self-signed cert):
+sqlcmd -S localhost -E -C -d RetailDW -Q "SELECT COUNT(*) FROM warehouse.FactSales;"
+```
+
+> **Production note:** "Trust server certificate" is fine for **local/dev**. For
+> **production**, install a **CA-issued certificate** on SQL Server so encryption
+> validates properly instead of being bypassed.
+
 ### 1.3 Which objects to import
 
 Import the **warehouse dimension tables** + the **purpose-built views**, NOT the raw landing/staging tables.
