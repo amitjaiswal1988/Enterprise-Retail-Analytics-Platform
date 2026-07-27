@@ -48,6 +48,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "SyncQuarter",
+      "fieldChanges": true,
+      "filterChanges": true
+    }
   }
 }

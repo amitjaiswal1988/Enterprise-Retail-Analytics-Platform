@@ -48,6 +48,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "SyncYear",
+      "fieldChanges": true,
+      "filterChanges": true
+    }
   }
 }
