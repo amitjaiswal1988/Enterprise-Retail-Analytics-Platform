@@ -21,6 +21,7 @@ annotation PBI_QueryOrder = ["DimCategory","DimCustomer","DimDate","DimEmployee"
 
 annotation PBI_ProTooling = ["DevMode"]
 
+ref table _Measures
 ref table DimCategory
 ref table DimCustomer
 ref table DimDate
@@ -32,6 +33,9 @@ ref table DimSupplier
 ref table FactInventory
 ref table FactReturns
 ref table FactSales
+ref table 'Top N Parameter'
+ref table 'Measure Selector'
+ref table 'Dimension Selector'
 
 ref cultureInfo en-US
 

@@ -1,0 +1,48 @@
+/// Field Parameter — lets a visual switch between Revenue / Gross Profit / Orders.
+/// Equivalent to Modeling > New Parameter > Fields.
+table 'Measure Selector'
+	lineageTag: c3d4e5f6-0000-0000-0000-000000000000
+
+	column 'Measure Selector'
+		dataType: string
+		lineageTag: c3d4e5f6-0000-0000-0000-000000000001
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Measure Selector Order'
+
+		extendedProperty ParameterMetadata = {"version":3,"kind":2}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Measure Selector Fields'
+		dataType: string
+		isHidden
+		lineageTag: c3d4e5f6-0000-0000-0000-000000000002
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Measure Selector Order'
+
+		extendedProperty ParameterMetadata = {"version":3,"kind":2}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Measure Selector Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3d4e5f6-0000-0000-0000-000000000003
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Measure Selector' = calculated
+		mode: import
+		source =
+				{
+				    ("Revenue", NAMEOF('_Measures'[Total Revenue]), 0),
+				    ("Gross Profit", NAMEOF('_Measures'[Gross Profit]), 1),
+				    ("Orders", NAMEOF('_Measures'[Total Orders]), 2)
+				}
+
+	annotation PBI_ResultType = Table

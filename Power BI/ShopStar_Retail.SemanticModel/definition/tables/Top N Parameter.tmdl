@@ -1,0 +1,19 @@
+/// What-If parameter feeding [Top N Products Revenue] / [Bottom N Products Revenue].
+/// Create equivalent via Modeling > New Parameter > Numeric range (1..50).
+table 'Top N Parameter'
+	lineageTag: b2c3d4e5-0000-0000-0000-000000000000
+
+	column 'Top N Value'
+		dataType: int64
+		formatString: 0
+		lineageTag: b2c3d4e5-0000-0000-0000-000000000001
+		summarizeBy: sum
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Top N Parameter' = calculated
+		mode: import
+		source = GENERATESERIES(1, 50, 1)
+
+	annotation PBI_ResultType = Table

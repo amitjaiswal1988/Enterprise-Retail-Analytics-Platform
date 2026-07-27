@@ -1,0 +1,824 @@
+/// Central measure table (disconnected) holding all reusable DAX measures.
+/// Phase 7 — File 01 of 5: Revenue & Sales (25 measures).
+table _Measures
+	lineageTag: a1b2c3d4-0000-0000-0000-000000000000
+
+	measure 'Total Revenue' = SUM ( FactSales[LineTotal] )
+		formatString: \$#,##0
+		displayFolder: 01 Core
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000001
+
+	measure 'Total Orders' = DISTINCTCOUNT ( FactSales[OrderID] )
+		formatString: #,##0
+		displayFolder: 01 Core
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000002
+
+	measure 'Total Quantity Sold' = SUM ( FactSales[Quantity] )
+		formatString: #,##0
+		displayFolder: 01 Core
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000003
+
+	measure 'Average Order Value' = DIVIDE ( [Total Revenue], [Total Orders] )
+		formatString: \$#,##0.00
+		displayFolder: 01 Core
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000004
+
+	measure 'Total Customers' = DISTINCTCOUNT ( FactSales[CustomerSK] )
+		formatString: #,##0
+		displayFolder: 01 Core
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000005
+
+	measure 'Revenue Per Customer' = DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[CustomerSK] ) )
+		formatString: \$#,##0.00
+		displayFolder: 02 Per-Unit KPIs
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000006
+
+	measure 'Revenue Per Store' = DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[StoreSK] ) )
+		formatString: \$#,##0
+		displayFolder: 02 Per-Unit KPIs
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000007
+
+	measure 'Sales Per Associate' = DIVIDE ( [Total Revenue], DISTINCTCOUNT ( FactSales[EmployeeSK] ) )
+		formatString: \$#,##0
+		displayFolder: 02 Per-Unit KPIs
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000008
+
+	measure 'Revenue YTD' = CALCULATE ( [Total Revenue], DATESYTD ( DimDate[FullDate] ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000009
+
+	measure 'Revenue QTD' = CALCULATE ( [Total Revenue], DATESQTD ( DimDate[FullDate] ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000a
+
+	measure 'Revenue MTD' = CALCULATE ( [Total Revenue], DATESMTD ( DimDate[FullDate] ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000b
+
+	measure 'Revenue Prior Year' = CALCULATE ( [Total Revenue], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000c
+
+	measure 'Revenue Prior Month' = CALCULATE ( [Total Revenue], PREVIOUSMONTH ( DimDate[FullDate] ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000d
+
+	measure 'Revenue Same Day Last Year' = CALCULATE ( [Total Revenue], DATEADD ( DimDate[FullDate], -1, YEAR ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000e
+
+	measure 'Revenue Rolling 12 Months' = CALCULATE ( [Total Revenue], DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -12, MONTH ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000000f
+
+	measure 'Revenue 3M Moving Average' = AVERAGEX ( DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -3, MONTH ), [Total Revenue] )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000010
+
+	measure 'Revenue Last 7 Days' = CALCULATE ( [Total Revenue], DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -7, DAY ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000011
+
+	measure 'Revenue Last 30 Days' = CALCULATE ( [Total Revenue], DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -30, DAY ) )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000012
+
+	measure 'Revenue Running Total' =
+			VAR MaxDate = MAX ( DimDate[FullDate] )
+			RETURN
+			    CALCULATE (
+			        [Total Revenue],
+			        FILTER ( ALLSELECTED ( DimDate[FullDate] ), DimDate[FullDate] <= MaxDate )
+			    )
+		formatString: \$#,##0
+		displayFolder: 03 Time Intelligence
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000013
+
+	measure 'Revenue YoY Growth %' =
+			VAR CurrentRevenue = [Total Revenue]
+			VAR PriorYearRevenue = [Revenue Prior Year]
+			RETURN
+			    DIVIDE ( CurrentRevenue - PriorYearRevenue, PriorYearRevenue )
+		formatString: 0.0%
+		displayFolder: 04 Growth
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000014
+
+	measure 'Revenue MoM Growth %' =
+			VAR CurrentRevenue = [Total Revenue]
+			VAR PriorMonthRevenue =
+			    CALCULATE ( [Total Revenue], PREVIOUSMONTH ( DimDate[FullDate] ) )
+			RETURN
+			    DIVIDE ( CurrentRevenue - PriorMonthRevenue, PriorMonthRevenue )
+		formatString: 0.0%
+		displayFolder: 04 Growth
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000015
+
+	measure 'Revenue by Channel Store' = CALCULATE ( [Total Revenue], FactSales[Channel] = "Store" )
+		formatString: \$#,##0
+		displayFolder: 05 Channel
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000016
+
+	measure 'Revenue by Channel Ecommerce' = CALCULATE ( [Total Revenue], FactSales[Channel] = "E-commerce" )
+		formatString: \$#,##0
+		displayFolder: 05 Channel
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000017
+
+	measure 'Ecommerce Share %' = DIVIDE ( [Revenue by Channel Ecommerce], [Total Revenue] )
+		formatString: 0.0%
+		displayFolder: 05 Channel
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000018
+
+	measure 'Dynamic Revenue Title' =
+			VAR SelectedYear = SELECTEDVALUE ( DimDate[Year], "All Years" )
+			VAR SelectedRegion = SELECTEDVALUE ( DimRegion[RegionName], "All Regions" )
+			VAR RevenueInMillions = FORMAT ( DIVIDE ( [Total Revenue], 1000000 ), "$#,##0.0" ) & "M"
+			RETURN
+			    "Revenue — " & SelectedYear & " — " & SelectedRegion & ": " & RevenueInMillions
+		displayFolder: 06 Utility
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000019
+
+	/// File 02 — Profitability (15 measures)
+	measure 'Total COGS' = SUM ( FactSales[LineCOGS] )
+		formatString: \$#,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000201
+
+	measure 'Gross Profit' = [Total Revenue] - [Total COGS]
+		formatString: \$#,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000202
+
+	measure 'Gross Margin %' = DIVIDE ( [Gross Profit], [Total Revenue] )
+		formatString: 0.0%
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000203
+
+	measure 'Gross Profit YoY Growth %' =
+			VAR CurrentGP = [Gross Profit]
+			VAR PriorYearGP =
+			    CALCULATE ( [Gross Profit], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+			RETURN
+			    DIVIDE ( CurrentGP - PriorYearGP, PriorYearGP )
+		formatString: 0.0%
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000204
+
+	measure 'Total Discount Amount' = SUM ( FactSales[DiscountAmount] )
+		formatString: \$#,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000205
+
+	measure 'Discount Rate %' = DIVIDE ( [Total Discount Amount], [Total Revenue] + [Total Discount Amount] )
+		formatString: 0.0%
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000206
+
+	measure 'Net Revenue' = [Total Revenue] - [Total Refund Amount]
+		formatString: \$#,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000207
+
+	measure 'Revenue After Returns' = [Total Revenue] - [Total Refund Amount]
+		formatString: \$#,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000208
+
+	measure 'Profit Per Order' = DIVIDE ( [Gross Profit], [Total Orders] )
+		formatString: \$#,##0.00
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000209
+
+	measure 'Profit Per Customer' = DIVIDE ( [Gross Profit], DISTINCTCOUNT ( FactSales[CustomerSK] ) )
+		formatString: \$#,##0.00
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020a
+
+	measure 'Margin % by Category' = [Gross Margin %]
+		formatString: 0.0%
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020b
+
+	measure 'High Margin Products Count' = CALCULATE ( DISTINCTCOUNT ( DimProduct[ProductSK] ), FILTER ( DimProduct, DimProduct[MarginPercent] > 40 ) )
+		formatString: #,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020c
+
+	measure 'Low Margin Products Count' = CALCULATE ( DISTINCTCOUNT ( DimProduct[ProductSK] ), FILTER ( DimProduct, DimProduct[MarginPercent] < 20 ) )
+		formatString: #,##0
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020d
+
+	measure 'Margin YTD' =
+			VAR GrossProfitYTD =
+			    CALCULATE ( [Gross Profit], DATESYTD ( DimDate[FullDate] ) )
+			VAR RevenueYTD =
+			    CALCULATE ( [Total Revenue], DATESYTD ( DimDate[FullDate] ) )
+			RETURN
+			    DIVIDE ( GrossProfitYTD, RevenueYTD )
+		formatString: 0.0%
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020e
+
+	measure 'KPI Status Margin' =
+			VAR MarginValue = [Gross Margin %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        MarginValue >= 0.35, "🟢 Green",
+			        MarginValue >= 0.30, "🟡 Amber",
+			        "🔴 Red"
+			    )
+		displayFolder: 07 Profitability
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000020f
+
+	/// File 03 — Customer Analytics (20 measures)
+	measure 'Active Customers' = DISTINCTCOUNT ( FactSales[CustomerSK] )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000301
+
+	measure 'New Customers' =
+			VAR PeriodStart = MIN ( DimDate[FullDate] )
+			RETURN
+			    COUNTROWS (
+			        FILTER (
+			            VALUES ( FactSales[CustomerSK] ),
+			            VAR FirstEverPurchase =
+			                CALCULATE (
+			                    MIN ( DimDate[FullDate] ),
+			                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+			                )
+			            RETURN FirstEverPurchase >= PeriodStart
+			        )
+			    )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000302
+
+	measure 'Returning Customers' =
+			VAR PeriodStart = MIN ( DimDate[FullDate] )
+			RETURN
+			    COUNTROWS (
+			        FILTER (
+			            VALUES ( FactSales[CustomerSK] ),
+			            VAR FirstEverPurchase =
+			                CALCULATE (
+			                    MIN ( DimDate[FullDate] ),
+			                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+			                )
+			            RETURN FirstEverPurchase < PeriodStart
+			        )
+			    )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000303
+
+	measure 'Lost / Churned Customers' =
+			VAR AsOfDate = MAX ( DimDate[FullDate] )
+			VAR ChurnCutoff = AsOfDate - 90
+			RETURN
+			    COUNTROWS (
+			        FILTER (
+			            VALUES ( FactSales[CustomerSK] ),
+			            VAR LastPurchase =
+			                CALCULATE (
+			                    MAX ( DimDate[FullDate] ),
+			                    ALLEXCEPT ( FactSales, FactSales[CustomerSK] )
+			                )
+			            RETURN LastPurchase < ChurnCutoff
+			        )
+			    )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000304
+
+	measure 'Customer Retention Rate %' =
+			VAR CurrentCustomers = VALUES ( FactSales[CustomerSK] )
+			VAR PriorCustomers =
+			    CALCULATETABLE (
+			        VALUES ( FactSales[CustomerSK] ),
+			        SAMEPERIODLASTYEAR ( DimDate[FullDate] )
+			    )
+			VAR RetainedCustomers = INTERSECT ( PriorCustomers, CurrentCustomers )
+			RETURN
+			    DIVIDE ( COUNTROWS ( RetainedCustomers ), COUNTROWS ( PriorCustomers ) )
+		formatString: 0.0%
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000305
+
+	measure 'Repeat Purchase Rate %' =
+			VAR RepeatCustomers =
+			    COUNTROWS (
+			        FILTER (
+			            VALUES ( FactSales[CustomerSK] ),
+			            CALCULATE ( DISTINCTCOUNT ( FactSales[OrderID] ) ) >= 2
+			        )
+			    )
+			RETURN
+			    DIVIDE ( RepeatCustomers, [Active Customers] )
+		formatString: 0.0%
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000306
+
+	measure 'Customer Lifetime Value' =
+			VAR AvgRevenuePerCustomer = [Revenue Per Customer]
+			VAR AvgFrequency = DIVIDE ( [Total Orders], [Active Customers] )
+			VAR AvgLifespanYears =
+			    MAX ( AVERAGE ( DimCustomer[CustomerTenureYears] ), 1 )
+			RETURN
+			    AvgRevenuePerCustomer * AvgFrequency * AvgLifespanYears
+		formatString: \$#,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000307
+
+	measure 'Average Purchase Frequency' = DIVIDE ( [Total Orders], [Active Customers] )
+		formatString: #,##0.00
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000308
+
+	measure 'Days Since Last Purchase' =
+			VAR AsOfDate = CALCULATE ( MAX ( DimDate[FullDate] ), ALL ( DimDate ) )
+			VAR LastPurchase = MAX ( DimDate[FullDate] )
+			RETURN
+			    DATEDIFF ( LastPurchase, AsOfDate, DAY )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000309
+
+	measure 'Customer Acquisition by Month' = [New Customers]
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030a
+
+	measure 'Customer Segment Distribution' = DISTINCTCOUNT ( DimCustomer[CustomerSK] )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030b
+
+	measure 'Revenue by Segment' = [Total Revenue]
+		formatString: \$#,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030c
+
+	measure 'Top 10 Customers by Revenue' = SUMX ( TOPN ( 10, VALUES ( DimCustomer[CustomerSK] ), [Total Revenue], DESC ), [Total Revenue] )
+		formatString: \$#,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030d
+
+	measure 'Customer Cohort' =
+			VAR FirstPurchaseDate =
+			    CALCULATE ( MIN ( DimDate[FullDate] ), ALLEXCEPT ( FactSales, FactSales[CustomerSK] ) )
+			RETURN
+			    CALCULATE (
+			        SELECTEDVALUE ( DimDate[YearMonth] ),
+			        DimDate[FullDate] = FirstPurchaseDate
+			    )
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030e
+
+	measure 'Cohort Retention Rate' =
+			VAR ActiveThisPeriod = DISTINCTCOUNT ( FactSales[CustomerSK] )
+			VAR CohortSize =
+			    CALCULATE ( DISTINCTCOUNT ( FactSales[CustomerSK] ), ALL ( DimDate ) )
+			RETURN
+			    DIVIDE ( ActiveThisPeriod, CohortSize )
+		formatString: 0.0%
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000030f
+
+	measure 'RFM Score' =
+			VAR Recency = [Days Since Last Purchase]
+			VAR Frequency = CALCULATE ( DISTINCTCOUNT ( FactSales[OrderID] ) )
+			VAR Monetary = [Total Revenue]
+			VAR RScore =
+			    SWITCH ( TRUE (), Recency <= 30, 5, Recency <= 60, 4, Recency <= 120, 3, Recency <= 240, 2, 1 )
+			VAR FScore =
+			    SWITCH ( TRUE (), Frequency >= 10, 5, Frequency >= 6, 4, Frequency >= 3, 3, Frequency >= 2, 2, 1 )
+			VAR MScore =
+			    SWITCH ( TRUE (), Monetary >= 5000, 5, Monetary >= 2000, 4, Monetary >= 1000, 3, Monetary >= 500, 2, 1 )
+			RETURN
+			    RScore * 100 + FScore * 10 + MScore
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000310
+
+	measure 'RFM Segment Name' =
+			VAR RScore = INT ( [RFM Score] / 100 )
+			VAR FScore = INT ( MOD ( [RFM Score], 100 ) / 10 )
+			VAR MScore = MOD ( [RFM Score], 10 )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        RScore >= 4 && FScore >= 4, "Champions",
+			        RScore >= 3 && FScore >= 3, "Loyal",
+			        RScore >= 4 && FScore <= 2, "New / Promising",
+			        RScore = 3, "Needs Attention",
+			        RScore = 2, "At Risk",
+			        "Lost"
+			    )
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000311
+
+	measure 'Customers Per Region' = DISTINCTCOUNT ( DimCustomer[CustomerSK] )
+		formatString: #,##0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000312
+
+	measure 'Average Customer Tenure' = AVERAGE ( DimCustomer[CustomerTenureYears] )
+		formatString: #,##0.0
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000313
+
+	measure 'KPI Status Retention' =
+			VAR RetentionValue = [Customer Retention Rate %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        RetentionValue >= 0.60, "🟢 Green",
+			        RetentionValue >= 0.50, "🟡 Amber",
+			        "🔴 Red"
+			    )
+		displayFolder: 08 Customer Analytics
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000314
+
+	/// File 04 — Inventory & Returns (20 measures)
+	measure 'Total Stock on Hand' =
+			CALCULATE (
+			    SUM ( FactInventory[QuantityOnHand] ),
+			    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+			)
+		formatString: #,##0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000401
+
+	measure 'Inventory Value' =
+			CALCULATE (
+			    SUM ( FactInventory[InventoryValue] ),
+			    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[InventoryValue] ) ) )
+			)
+		formatString: \$#,##0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000402
+
+	measure 'Inventory Turnover' =
+			VAR AvgInventoryValue =
+			    AVERAGEX (
+			        VALUES ( FactInventory[SnapshotDateKey] ),
+			        CALCULATE ( SUM ( FactInventory[InventoryValue] ) )
+			    )
+			RETURN
+			    DIVIDE ( [Total COGS], AvgInventoryValue )
+		formatString: #,##0.0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000403
+
+	measure 'Days of Inventory' = DIVIDE ( 365, [Inventory Turnover] )
+		formatString: #,##0.0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000404
+
+	measure 'Low Stock Items Count' =
+			CALCULATE (
+			    COUNTROWS ( FactInventory ),
+			    FactInventory[IsLowStock] = TRUE (),
+			    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+			)
+		formatString: #,##0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000405
+
+	measure 'Out of Stock Items Count' =
+			CALCULATE (
+			    COUNTROWS ( FactInventory ),
+			    FactInventory[IsOutOfStock] = TRUE (),
+			    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+			)
+		formatString: #,##0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000406
+
+	measure 'Stockout Rate %' =
+			VAR TotalPositions =
+			    CALCULATE (
+			        COUNTROWS ( FactInventory ),
+			        LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+			    )
+			RETURN
+			    DIVIDE ( [Out of Stock Items Count], TotalPositions )
+		formatString: 0.0%
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000407
+
+	measure 'Overstock Items Count' =
+			CALCULATE (
+			    COUNTROWS (
+			        FILTER ( FactInventory, FactInventory[QuantityOnHand] > 2 * FactInventory[ReorderQuantity] )
+			    ),
+			    LASTNONBLANK ( DimDate[FullDate], CALCULATE ( SUM ( FactInventory[QuantityOnHand] ) ) )
+			)
+		formatString: #,##0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000408
+
+	measure 'Inventory Health Score' =
+			VAR StockoutRate = [Stockout Rate %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        StockoutRate < 0.02, "🟢 Green",
+			        StockoutRate < 0.05, "🟡 Amber",
+			        "🔴 Red"
+			    )
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000409
+
+	measure 'Stock Coverage Days' =
+			VAR DaysInContext = COUNTROWS ( VALUES ( DimDate[FullDate] ) )
+			VAR AvgDailyUnits = DIVIDE ( [Total Quantity Sold], DaysInContext )
+			RETURN
+			    DIVIDE ( [Total Stock on Hand], AvgDailyUnits )
+		formatString: #,##0.0
+		displayFolder: 09 Inventory
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040a
+
+	measure 'Total Returns Count' = DISTINCTCOUNT ( FactReturns[ReturnID] )
+		formatString: #,##0
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040b
+
+	measure 'Total Refund Amount' = SUM ( FactReturns[RefundAmount] )
+		formatString: \$#,##0
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040c
+
+	measure 'Return Rate %' = DIVIDE ( [Total Refund Amount], [Total Revenue] )
+		formatString: 0.0%
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040d
+
+	measure 'Top Return Reason' =
+			MAXX (
+			    TOPN (
+			        1,
+			        VALUES ( FactReturns[Reason] ),
+			        CALCULATE ( DISTINCTCOUNT ( FactReturns[ReturnID] ) ),
+			        DESC
+			    ),
+			    FactReturns[Reason]
+			)
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040e
+
+	measure 'Avg Days to Return' = AVERAGE ( FactReturns[DaysToReturn] )
+		formatString: #,##0.0
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000040f
+
+	measure 'Return Rate by Category' = [Return Rate %]
+		formatString: 0.0%
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000410
+
+	measure 'Return Rate YoY' =
+			VAR CurrentRate = [Return Rate %]
+			VAR PriorRate =
+			    CALCULATE ( [Return Rate %], SAMEPERIODLASTYEAR ( DimDate[FullDate] ) )
+			RETURN
+			    CurrentRate - PriorRate
+		formatString: 0.0%
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000411
+
+	measure 'Defective Returns Count' =
+			CALCULATE (
+			    [Total Returns Count],
+			    FactReturns[Condition] IN { "Damaged", "Defective" }
+			)
+		formatString: #,##0
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000412
+
+	measure 'Cost of Returns' =
+			VAR LogisticsPerReturn = 8
+			RETURN
+			    [Total Refund Amount] + [Total Returns Count] * LogisticsPerReturn
+		formatString: \$#,##0
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000413
+
+	measure 'KPI Status Return Rate' =
+			VAR ReturnRateValue = [Return Rate %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ReturnRateValue < 0.05, "🟢 Green",
+			        ReturnRateValue < 0.08, "🟡 Amber",
+			        "🔴 Red"
+			    )
+		displayFolder: 10 Returns
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000414
+
+	/// File 05 — Advanced Analytics (18 measures + 2 field-parameter tables)
+	measure 'Product Revenue Rank' = RANKX ( ALL ( DimProduct[ProductName] ), [Total Revenue],, DESC, DENSE )
+		formatString: #,##0
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000501
+
+	measure 'Top N Products Revenue' =
+			VAR N = SELECTEDVALUE ( 'Top N Parameter'[Top N Value], 10 )
+			RETURN
+			    SUMX (
+			        TOPN ( N, VALUES ( DimProduct[ProductName] ), [Total Revenue], DESC ),
+			        [Total Revenue]
+			    )
+		formatString: \$#,##0
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000502
+
+	measure 'Bottom N Products Revenue' =
+			VAR N = SELECTEDVALUE ( 'Top N Parameter'[Top N Value], 10 )
+			RETURN
+			    SUMX (
+			        TOPN ( N, VALUES ( DimProduct[ProductName] ), [Total Revenue], ASC ),
+			        [Total Revenue]
+			    )
+		formatString: \$#,##0
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000503
+
+	measure 'Rank within Category' =
+			RANKX (
+			    CALCULATETABLE ( VALUES ( DimProduct[ProductName] ), ALLEXCEPT ( DimProduct, DimProduct[CategoryName] ) ),
+			    [Total Revenue],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: #,##0
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000504
+
+	measure 'Cumulative Revenue %' =
+			VAR CurrentRank = [Product Revenue Rank]
+			VAR RunningRevenue =
+			    CALCULATE (
+			        [Total Revenue],
+			        FILTER (
+			            ALLSELECTED ( DimProduct[ProductName] ),
+			            [Product Revenue Rank] <= CurrentRank
+			        )
+			    )
+			VAR GrandTotal = CALCULATE ( [Total Revenue], ALLSELECTED ( DimProduct[ProductName] ) )
+			RETURN
+			    DIVIDE ( RunningRevenue, GrandTotal )
+		formatString: 0.0%
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000505
+
+	measure 'ABC Classification' =
+			VAR CumulativePct = [Cumulative Revenue %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        CumulativePct <= 0.80, "A",
+			        CumulativePct <= 0.95, "B",
+			        "C"
+			    )
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000506
+
+	measure 'A-Class Product Count' =
+			COUNTROWS (
+			    FILTER ( VALUES ( DimProduct[ProductName] ), [ABC Classification] = "A" )
+			)
+		formatString: #,##0
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000507
+
+	measure 'Pareto Line' = [Cumulative Revenue %]
+		formatString: 0.0%
+		displayFolder: 11 Ranking & Pareto
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000508
+
+	measure 'Selected vs Prior Period' =
+			VAR CurrentValue = [Total Revenue]
+			VAR PriorValue =
+			    CALCULATE ( [Total Revenue], DATEADD ( DimDate[FullDate], -1, MONTH ) )
+			RETURN
+			    CurrentValue - PriorValue
+		formatString: \$#,##0
+		displayFolder: 12 Comparison
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000509
+
+	measure '% of Grand Total' = DIVIDE ( [Total Revenue], CALCULATE ( [Total Revenue], ALLSELECTED () ) )
+		formatString: 0.0%
+		displayFolder: 12 Comparison
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050a
+
+	measure '% Contribution by Category' = DIVIDE ( [Total Revenue], CALCULATE ( [Total Revenue], ALL ( DimCategory[CategoryName] ) ) )
+		formatString: 0.0%
+		displayFolder: 12 Comparison
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050b
+
+	measure 'Index vs Company Average' =
+			VAR CurrentValue = [Total Revenue]
+			VAR PeerAverage =
+			    AVERAGEX ( ALLSELECTED ( DimStore[StoreName] ), [Total Revenue] )
+			RETURN
+			    DIVIDE ( CurrentValue, PeerAverage ) * 100
+		formatString: #,##0.0
+		displayFolder: 12 Comparison
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050c
+
+	measure 'Revenue Forecast' =
+			VAR LatestRevenue = [Total Revenue]
+			VAR Avg3Month = [Revenue 3M Moving Average]
+			VAR TrendDelta = LatestRevenue - Avg3Month
+			RETURN
+			    LatestRevenue + TrendDelta
+		formatString: \$#,##0
+		displayFolder: 13 Forecasting
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050d
+
+	measure 'Seasonal Index per Month' =
+			VAR ThisMonthRevenue = [Total Revenue]
+			VAR OverallMonthlyAvg =
+			    CALCULATE (
+			        AVERAGEX ( VALUES ( DimDate[YearMonth] ), [Total Revenue] ),
+			        ALL ( DimDate[MonthNumber], DimDate[MonthName] )
+			    )
+			RETURN
+			    DIVIDE ( ThisMonthRevenue, OverallMonthlyAvg )
+		formatString: #,##0.00
+		displayFolder: 13 Forecasting
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050e
+
+	measure 'Growth Rate CAGR' =
+			VAR FirstYear = MINX ( ALLSELECTED ( DimDate[Year] ), DimDate[Year] )
+			VAR LastYear = MAXX ( ALLSELECTED ( DimDate[Year] ), DimDate[Year] )
+			VAR StartValue = CALCULATE ( [Total Revenue], DimDate[Year] = FirstYear )
+			VAR EndValue = CALCULATE ( [Total Revenue], DimDate[Year] = LastYear )
+			VAR Years = LastYear - FirstYear
+			RETURN
+			    IF ( Years > 0 && StartValue > 0, POWER ( DIVIDE ( EndValue, StartValue ), DIVIDE ( 1, Years ) ) - 1 )
+		formatString: 0.0%
+		displayFolder: 13 Forecasting
+		lineageTag: a1b2c3d4-0000-0000-0000-00000000050f
+
+	measure 'Dynamic Subtitle' =
+			VAR Yr = SELECTEDVALUE ( DimDate[Year], "All Years" )
+			VAR Rgn = SELECTEDVALUE ( DimRegion[RegionName], "All Regions" )
+			VAR Seg = SELECTEDVALUE ( DimCustomer[Segment], "All Segments" )
+			RETURN
+			    "Showing: " & Yr & "  |  " & Rgn & "  |  " & Seg
+		displayFolder: 14 Dynamic UX
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000510
+
+	measure 'Conditional Format Value' =
+			VAR MarginValue = [Gross Margin %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        MarginValue >= 0.35, "#2ECC71",
+			        MarginValue >= 0.30, "#F1C40F",
+			        "#E74C3C"
+			    )
+		displayFolder: 14 Dynamic UX
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000511
+
+	measure 'Sparkline Measure' =
+			CONCATENATEX (
+			    DATESINPERIOD ( DimDate[FullDate], MAX ( DimDate[FullDate] ), -12, MONTH ),
+			    FORMAT ( DIVIDE ( [Total Revenue], 1000 ), "0" ),
+			    " ▸ ",
+			    DimDate[FullDate],
+			    ASC
+			)
+		displayFolder: 14 Dynamic UX
+		lineageTag: a1b2c3d4-0000-0000-0000-000000000512
+
+	column Value
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a1b2c3d4-0000-0000-0000-0000000000f0
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {BLANK()}
+
+	annotation PBI_ResultType = Table
