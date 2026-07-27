@@ -138,6 +138,13 @@ table FactInventory
 
 		annotation SummarizationSetBy = Automatic
 
+	column StockStatus = SWITCH ( TRUE (), FactInventory[IsOutOfStock], "Out of Stock", FactInventory[IsLowStock], "Low Stock", "In Stock" )
+		dataType: string
+		lineageTag: 7c2f1a90-3b64-4e21-9d8a-5f0e2c6b1d47
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
 	partition FactInventory = m
 		mode: import
 		queryGroup: 'Fact table'
