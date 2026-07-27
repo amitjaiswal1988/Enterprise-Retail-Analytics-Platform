@@ -39,3 +39,24 @@ ref table 'Dimension Selector'
 
 ref cultureInfo en-US
 
+/// Static Row-Level Security: each regional director sees only their own region.
+role 'Region - East'
+	modelPermission: read
+
+	tablePermission DimRegion = DimRegion[RegionName] = "East"
+
+role 'Region - West'
+	modelPermission: read
+
+	tablePermission DimRegion = DimRegion[RegionName] = "West"
+
+role 'Region - North'
+	modelPermission: read
+
+	tablePermission DimRegion = DimRegion[RegionName] = "North"
+
+role 'Region - South'
+	modelPermission: read
+
+	tablePermission DimRegion = DimRegion[RegionName] = "South"
+

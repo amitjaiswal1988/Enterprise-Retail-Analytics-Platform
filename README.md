@@ -155,12 +155,12 @@ python -m pytest tests/test_data_quality.py -v
 | 6 | Power BI Data Model | ✅ Complete |
 | 7 | Advanced DAX (100+ measures) | ✅ Complete |
 | 8 | Dashboard Development (9 dashboards) + Branding + Slicers + Presentation Guide | ✅ Complete |
-| 9 | Power BI Service Deployment | Pending |
-| 10 | Security (Row-Level Security) | Pending |
-| 11 | Performance Optimization | Pending |
-| 12 | Documentation | Pending |
-| 13 | GitHub Repository | Pending |
-| 14 | Interview Preparation | Ongoing |
+| 9 | Power BI Service Deployment (workspace, gateway, refresh, apps) | ✅ Complete |
+| 10 | Security (Row-Level Security: static, dynamic, OLS, hierarchical) | ✅ Complete |
+| 11 | Performance Optimization (SQL → Power Query → model → DAX → visuals) | ✅ Complete |
+| 12 | Documentation (master index + dependency map) | ✅ Complete |
+| 13 | GitHub Repository (portfolio polish) | ✅ Complete |
+| 14 | Interview Preparation (50 Q&A across all phases) | ✅ Complete |
 
 ---
 
@@ -180,6 +180,100 @@ python -m pytest tests/test_data_quality.py -v
 - Incremental Refresh configuration
 - Complete documentation suite (BRD, TDD, Data Dictionary)
 - Automated data quality tests
+
+---
+
+## Project Highlights
+
+| Metric | Value |
+|--------|-------|
+| Revenue modeled | **$719.2M** |
+| Orders | **50,000** (development) / **500,000** (production) |
+| Order-detail rows | **~200K** / **~2M** |
+| Customers | **20,000** (18,431 active — 92% retention) |
+| Gross margin | **16.8%** ($121.0M gross profit on $598.2M COGS) |
+| Star schema | **3 fact tables + 8 dimensions** |
+| DAX measures | **98+** across 5 documented files |
+| Dashboards | **9** branded, interactive report pages |
+| SQL practice queries | **100** DB-validated |
+| Documentation | **30+ markdown files, ~9,000+ lines** |
+| Security | Static + dynamic RLS, OLS, hierarchical patterns |
+
+---
+
+## Skills Demonstrated
+
+- **Data Engineering:** 3-layer ETL (Landing → Staging → Warehouse), stored-procedure orchestration, intentional-defect handling.
+- **Dimensional Modeling:** Kimball star schema, surrogate keys, Kimball -1 unknown members, grain definition.
+- **SQL Server:** T-SQL, columnstore indexes, views, execution-plan tuning, statistics management.
+- **Power BI & DAX:** TMDL semantic model, 98+ measures, time intelligence, `CALCULATE`/`VAR` patterns, slicer sync.
+- **Data Visualization:** Chart-selection logic, executive dashboard design, custom brand theme.
+- **Security:** Row-Level Security (static/dynamic/hierarchical) and Object-Level Security.
+- **Deployment:** Power BI Service, on-premises gateway, scheduled + incremental refresh, apps, deployment pipelines.
+- **Performance Tuning:** Query folding, model size reduction, DAX optimization, aggregations.
+- **Process:** Git/GitHub workflow, PBIP source control, Python automation, pytest data-quality testing, thorough documentation.
+- **Business Storytelling:** Translating $719M of data into executive decisions.
+
+---
+
+## How to Explore This Project (for Recruiters)
+
+**10-minute tour:**
+1. Read this README for the big picture.
+2. Open [Documentation/Dashboard_Presentation_Guide.md](Documentation/Dashboard_Presentation_Guide.md) — see the 9 dashboards explained in business terms.
+3. Skim [Documentation/Interview_Preparation_Complete_Guide.md](Documentation/Interview_Preparation_Complete_Guide.md) — 50 Q&A showing depth.
+
+**30-minute deep dive:**
+4. [Documentation/Project_Documentation_Index.md](Documentation/Project_Documentation_Index.md) — the master map of everything.
+5. [Documentation/Technical_Design_Document_Phase3.md](Documentation/Technical_Design_Document_Phase3.md) and the [SQL/](SQL/) folder — the warehouse build.
+6. [Documentation/Data_Modeling_Best_Practices.md](Documentation/Data_Modeling_Best_Practices.md) and the [DAX/](DAX/) folder — the model and measures.
+7. [Documentation/Row_Level_Security_Guide.md](Documentation/Row_Level_Security_Guide.md) and [Documentation/Performance_Optimization_Guide.md](Documentation/Performance_Optimization_Guide.md) — production readiness.
+
+---
+
+## Architecture at a Glance
+
+```
+   SOURCE            LANDING           STAGING           WAREHOUSE
+ ┌──────────┐     ┌──────────┐     ┌───────────┐     ┌───────────────┐
+ │ Synthetic│────▶│ Raw CSV  │────▶│  Cleaned  │────▶│  Star Schema  │
+ │ CSV data │     │ ingested │     │ validated │     │ 3 Facts + 8   │
+ │ (Python) │     │          │     │           │     │ Dimensions    │
+ └──────────┘     └──────────┘     └───────────┘     └──────┬────────┘
+                                                            │
+                                          ┌─────────────────┴─────────────────┐
+                                          ▼                                   ▼
+                                 ┌──────────────────┐              ┌──────────────────┐
+                                 │  Power BI Model  │              │  Analytics Views │
+                                 │  98 DAX measures │              │  (RFM, ABC, KPI) │
+                                 └────────┬─────────┘              └──────────────────┘
+                                          ▼
+                          ┌───────────────────────────────┐
+                          │      9 Power BI Dashboards      │
+                          │  + Slicers + RLS + Brand Theme  │
+                          └───────────────┬───────────────┘
+                                          ▼
+                          ┌───────────────────────────────┐
+                          │       Power BI Service          │
+                          │  Gateway · Refresh · Apps · RLS │
+                          └───────────────────────────────┘
+```
+
+---
+
+## What Makes This Different (vs a Toy Project)
+
+| Toy project | This project |
+|-------------|--------------|
+| One CSV loaded straight into Power BI | Full 3-layer ETL into a governed SQL Server warehouse |
+| Clean, perfect sample data | **Intentional data-quality defects** cleaned in staging (NULLs, duplicates, case mismatches) |
+| A few basic measures | **98+ documented DAX measures** with WHAT/WHY/WHEN notes |
+| One flat table | **Kimball star schema** (3 facts + 8 dimensions, surrogate keys, -1 members) |
+| No security | **Static + dynamic + hierarchical RLS and OLS** |
+| Runs only on a laptop | **Service deployment** with gateway, scheduled + incremental refresh, apps |
+| No performance thought | **Columnstore, query folding, DAX tuning, aggregations** |
+| No docs | **30+ documents (~9,000+ lines)** and a full interview guide |
+| No version control | **Git/GitHub with PBIP text-based source control** |
 
 ---
 
