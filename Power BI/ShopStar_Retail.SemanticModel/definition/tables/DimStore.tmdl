@@ -1,0 +1,118 @@
+table DimStore
+	lineageTag: beb611e3-2df7-4516-94e7-f5ca53e79964
+
+	column StoreSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 615a4253-5e04-4f28-96e1-4bd36cd4050b
+		summarizeBy: none
+		sourceColumn: StoreSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreID
+		dataType: int64
+		formatString: 0
+		lineageTag: fdd29385-62e9-42d3-b1ef-e0f58b6f99be
+		summarizeBy: count
+		sourceColumn: StoreID
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreName
+		dataType: string
+		lineageTag: 82ab25ee-a6d9-4b1c-be9e-e7346d96cac1
+		summarizeBy: none
+		sourceColumn: StoreName
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		lineageTag: 043cdd77-eef8-494f-9e24-e050279896a1
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column State
+		dataType: string
+		lineageTag: b88d55d8-e280-4cb6-9e84-88aaa64dc567
+		summarizeBy: none
+		sourceColumn: State
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 25498d05-379f-4386-9f70-0b2f85ae9971
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreType
+		dataType: string
+		lineageTag: 499a43e3-b036-47dc-a5fa-0be9ebda42f3
+		summarizeBy: none
+		sourceColumn: StoreType
+
+		annotation SummarizationSetBy = Automatic
+
+	column OpenDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2354b58c-dcac-4253-bd70-fe33b70a92a2
+		summarizeBy: none
+		sourceColumn: OpenDate
+
+		variation Variation
+			isDefault
+			relationship: b7872a13-1067-44f6-87bc-4669cea74f4e
+			defaultHierarchy: LocalDateTable_d6cd7c62-2281-406e-9a32-91a3ccb40517.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column SquareFootage
+		dataType: int64
+		formatString: 0
+		lineageTag: 677324b8-4cad-42e5-885e-f2af92ef73b4
+		summarizeBy: sum
+		sourceColumn: SquareFootage
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreSize
+		dataType: string
+		lineageTag: ee0fe9ee-561b-4b9e-82a3-2b208bf0bc76
+		summarizeBy: none
+		sourceColumn: StoreSize
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearsOpen
+		dataType: int64
+		formatString: 0
+		lineageTag: fe0f8dca-9fb6-4aab-ae0f-c7f976761761
+		summarizeBy: sum
+		sourceColumn: YearsOpen
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimStore = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimStore"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"})
+				in
+				  #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

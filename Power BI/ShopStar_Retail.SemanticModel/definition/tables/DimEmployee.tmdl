@@ -1,0 +1,136 @@
+table DimEmployee
+	lineageTag: 20e43315-db04-41ca-a91c-1830c443efb2
+
+	column EmployeeSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 905ae78c-04c7-41b9-93c7-de42fd00363e
+		summarizeBy: none
+		sourceColumn: EmployeeSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmployeeID
+		dataType: int64
+		formatString: 0
+		lineageTag: 6f06345f-7d94-4904-9f0c-2e47f5f2371c
+		summarizeBy: count
+		sourceColumn: EmployeeID
+
+		annotation SummarizationSetBy = Automatic
+
+	column FirstName
+		dataType: string
+		lineageTag: fa08728d-b7cb-44c1-9aa2-4d6aa16321b4
+		summarizeBy: none
+		sourceColumn: FirstName
+
+		annotation SummarizationSetBy = Automatic
+
+	column LastName
+		dataType: string
+		lineageTag: 6c5df003-a1b6-4f78-9bd9-c02881c9354c
+		summarizeBy: none
+		sourceColumn: LastName
+
+		annotation SummarizationSetBy = Automatic
+
+	column FullName
+		dataType: string
+		lineageTag: 1d3754b5-638f-432b-bf46-0690f01466cc
+		summarizeBy: none
+		sourceColumn: FullName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Department
+		dataType: string
+		lineageTag: 9781122f-0a6d-4483-889d-1aee6f282613
+		summarizeBy: none
+		sourceColumn: Department
+
+		annotation SummarizationSetBy = Automatic
+
+	column Role
+		dataType: string
+		lineageTag: f6b1b659-655a-4753-9eb9-0da45db2ba35
+		summarizeBy: none
+		sourceColumn: Role
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreID
+		dataType: int64
+		formatString: 0
+		lineageTag: 4f820a95-e035-4a71-9232-149b5688b242
+		summarizeBy: count
+		sourceColumn: StoreID
+
+		annotation SummarizationSetBy = Automatic
+
+	column HireDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 36dbc2a2-0ff7-4f3f-adbd-62b371955b34
+		summarizeBy: none
+		sourceColumn: HireDate
+
+		variation Variation
+			isDefault
+			relationship: 80294e33-21d2-4a85-82e8-dbe4cf4f55fe
+			defaultHierarchy: LocalDateTable_6a5b1183-a61d-42c4-a257-b9e28c233599.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Salary
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ab37038-27c2-4a48-a684-95685888d5e4
+		summarizeBy: sum
+		sourceColumn: Salary
+
+		annotation SummarizationSetBy = Automatic
+
+	column ManagerID
+		dataType: int64
+		formatString: 0
+		lineageTag: cee86efe-fb87-44dc-862f-a3ccba5107c2
+		summarizeBy: count
+		sourceColumn: ManagerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column TenureYears
+		dataType: int64
+		formatString: 0
+		lineageTag: 59028016-4cdb-41f6-9157-998555e85b94
+		summarizeBy: sum
+		sourceColumn: TenureYears
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalaryBand
+		dataType: string
+		lineageTag: fae82e3f-49ff-43d7-83b6-be86381dff39
+		summarizeBy: none
+		sourceColumn: SalaryBand
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimEmployee = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimEmployee"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactSales"})
+				in
+				  #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

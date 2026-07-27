@@ -1,0 +1,243 @@
+table DimDate
+	lineageTag: f7890236-a801-47a1-b4b2-9d7ceb23bfef
+
+	column FullDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: de5fd672-d846-4164-819a-7c3f77fc1aca
+		summarizeBy: none
+		sourceColumn: FullDate
+
+		variation Variation
+			isDefault
+			relationship: 6fcde315-db32-49d9-8f6d-04cd9810531c
+			defaultHierarchy: LocalDateTable_26258f59-aab9-4881-8bae-aeded7f57776.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DayOfWeek
+		dataType: int64
+		formatString: 0
+		lineageTag: c80e5236-8cb9-4ead-80a0-5871380c99ae
+		summarizeBy: sum
+		sourceColumn: DayOfWeek
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayName
+		dataType: string
+		lineageTag: 8ab7b4ee-28f8-4096-bba3-846eae6a0a6f
+		summarizeBy: none
+		sourceColumn: DayName
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfMonth
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b30f61b-617f-4bd3-9d72-4ec249d1aaca
+		summarizeBy: sum
+		sourceColumn: DayOfMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 8d23b8c1-2926-4753-a398-c3075314d3da
+		summarizeBy: sum
+		sourceColumn: DayOfYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekOfYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 0b1dca61-6e35-4487-835c-5cd52a07eb1f
+		summarizeBy: sum
+		sourceColumn: WeekOfYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 4e857f73-63de-4a4c-bd33-b39911fab0d1
+		summarizeBy: sum
+		sourceColumn: MonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthName
+		dataType: string
+		lineageTag: 769824a7-a901-482f-836e-e2f7ba06bf89
+		summarizeBy: none
+		sourceColumn: MonthName
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthShort
+		dataType: string
+		lineageTag: 886703e5-5e91-4b61-bd25-bdea5b4dd392
+		summarizeBy: none
+		sourceColumn: MonthShort
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 8f2dbc04-ce37-4a43-bbe2-43ed7b323f12
+		summarizeBy: sum
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column QuarterName
+		dataType: string
+		lineageTag: f1329b52-05e1-46e8-bccb-950b8cd732bf
+		summarizeBy: none
+		sourceColumn: QuarterName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 6d846867-f04d-47e6-bf85-2e56ab72ce23
+		summarizeBy: sum
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		dataType: string
+		lineageTag: a3004881-00cf-476f-9cf1-70b2be4bcb8c
+		summarizeBy: none
+		sourceColumn: YearMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearQuarter
+		dataType: string
+		lineageTag: 70de482e-519c-4369-86e7-9c3475036db8
+		summarizeBy: none
+		sourceColumn: YearQuarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsWeekend
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 027f41c3-2032-4315-93f0-d366bcac6924
+		summarizeBy: none
+		sourceColumn: IsWeekend
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsWeekday
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d7fc1aa8-b85c-48a9-aef2-4451644209a3
+		summarizeBy: none
+		sourceColumn: IsWeekday
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 15ae427a-598a-4cd9-bcd7-23a7d7b243df
+		summarizeBy: sum
+		sourceColumn: FiscalYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalQuarter
+		dataType: int64
+		formatString: 0
+		lineageTag: bbf1a3af-1332-458a-b27d-c21c9b9042e5
+		summarizeBy: sum
+		sourceColumn: FiscalQuarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalMonth
+		dataType: int64
+		formatString: 0
+		lineageTag: 25330841-6053-4cdc-a5bb-65793dc9bb70
+		summarizeBy: sum
+		sourceColumn: FiscalMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsCurrentMonth
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a72d38d7-2a1d-4379-8996-d362e30f7611
+		summarizeBy: none
+		sourceColumn: IsCurrentMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsCurrentQuarter
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 1dc774e7-1a12-425a-b21c-118de74cb567
+		summarizeBy: none
+		sourceColumn: IsCurrentQuarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsCurrentYear
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 84a88085-f2a1-4fca-a073-0ff154430296
+		summarizeBy: none
+		sourceColumn: IsCurrentYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsHoliday
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 763ad2ae-2a92-4bae-ba46-34941701d3fe
+		summarizeBy: none
+		sourceColumn: IsHoliday
+
+		annotation SummarizationSetBy = Automatic
+
+	column HolidayName
+		dataType: string
+		lineageTag: 0afb3af6-65e7-4003-896d-f0163b173e1b
+		summarizeBy: none
+		sourceColumn: HolidayName
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 7e8d9b03-673b-4e28-be1d-523ed93d39ec
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimDate = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimDate"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"warehouse.FactInventory", "warehouse.FactReturns(DateKey)", "warehouse.FactReturns(DateKey) 2", "warehouse.FactSales"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

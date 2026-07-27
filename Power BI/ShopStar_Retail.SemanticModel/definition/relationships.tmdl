@@ -1,0 +1,121 @@
+relationship b3cb5cda-91d8-4798-8e0f-ba0020d83ed9
+	joinOnDateBehavior: datePartOnly
+	fromColumn: DimCustomer.JoinDate
+	toColumn: LocalDateTable_e4ac849f-e1d6-44d5-a9e7-d67239f56b34.Date
+
+relationship 6fcde315-db32-49d9-8f6d-04cd9810531c
+	joinOnDateBehavior: datePartOnly
+	fromColumn: DimDate.FullDate
+	toColumn: LocalDateTable_26258f59-aab9-4881-8bae-aeded7f57776.Date
+
+relationship 80294e33-21d2-4a85-82e8-dbe4cf4f55fe
+	joinOnDateBehavior: datePartOnly
+	fromColumn: DimEmployee.HireDate
+	toColumn: LocalDateTable_6a5b1183-a61d-42c4-a257-b9e28c233599.Date
+
+relationship b7872a13-1067-44f6-87bc-4669cea74f4e
+	joinOnDateBehavior: datePartOnly
+	fromColumn: DimStore.OpenDate
+	toColumn: LocalDateTable_d6cd7c62-2281-406e-9a32-91a3ccb40517.Date
+
+relationship c610bed5-f457-7272-ac57-c31a1bb84885
+	fromColumn: FactSales.OrderDateKey
+	toColumn: DimDate.DateKey
+
+relationship 650181ff-7564-875b-6d7e-f0fd55daca49
+	fromColumn: FactSales.CustomerSK
+	toColumn: DimCustomer.CustomerSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship d97c8667-a0ad-0333-4efe-9b63adf13fe7
+	fromColumn: FactSales.StoreSK
+	toColumn: DimStore.StoreSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship 2e42fde5-35fb-5066-ac28-c6846db26d61
+	fromColumn: FactSales.EmployeeSK
+	toColumn: DimEmployee.EmployeeSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship 93b0e689-28bd-9ad1-d763-70b7abfbc328
+	fromColumn: FactSales.SupplierSK
+	toColumn: DimSupplier.SupplierSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship 9d67a5a4-6863-e737-2d39-a2ec0135563c
+	fromColumn: FactSales.CategorySK
+	toColumn: DimCategory.CategorySK
+
+relationship 468a2001-a9db-69c6-6691-4c1bfa9425c0
+	fromColumn: FactSales.ProductSK
+	toColumn: DimProduct.ProductSK
+
+relationship 0afd172d-1026-76f1-06a2-dcc8eb3978c0
+	fromColumn: FactInventory.CategorySK
+	toColumn: DimCategory.CategorySK
+
+relationship 07da4a7e-98a0-5442-94dd-c0b37ca47894
+	fromColumn: FactInventory.ProductSK
+	toColumn: DimProduct.ProductSK
+
+relationship a5e828bd-9311-952e-9f31-c35b16ddd38a
+	fromColumn: FactInventory.StoreSK
+	toColumn: DimStore.StoreSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship 60c06320-4582-04be-9bb4-16df9f28d464
+	fromColumn: FactSales.RegionSK
+	toColumn: DimRegion.RegionSK
+
+relationship 399d1d9f-d20d-fd04-ab0f-4d01b206699a
+	fromColumn: FactInventory.RegionSK
+	toColumn: DimRegion.RegionSK
+
+relationship f4cc09db-bca5-0ee1-3f4c-81bd74b7b622
+	fromColumn: FactInventory.SupplierSK
+	toColumn: DimSupplier.SupplierSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship aa563166-67b4-ea3f-220e-b9da9df8b34c
+	fromColumn: FactInventory.SnapshotDateKey
+	toColumn: DimDate.DateKey
+
+relationship 250e7900-a337-c84d-c4d2-42b0d690e2d9
+	fromColumn: FactReturns.StoreSK
+	toColumn: DimStore.StoreSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship 965c2d07-f570-9bdf-51bb-597739316462
+	fromColumn: FactReturns.CategorySK
+	toColumn: DimCategory.CategorySK
+
+relationship facbd5d9-613a-cf3d-7771-fd5d1abc19c9
+	fromColumn: FactReturns.ProductSK
+	toColumn: DimProduct.ProductSK
+
+relationship 8ecd484f-d18e-5b4d-a456-9187ff77ee3b
+	fromColumn: FactReturns.RegionSK
+	toColumn: DimRegion.RegionSK
+
+relationship bf5726f7-2c49-e0c4-b1a0-448c106f1809
+	fromColumn: FactReturns.CustomerSK
+	toColumn: DimCustomer.CustomerSK
+
+	annotation PBI_IsFromSource = FS
+
+relationship dd3596f0-01e5-2d71-164d-f09b8ae314ec
+	fromColumn: FactReturns.ReturnDateKey
+	toColumn: DimDate.DateKey
+
+relationship 42b027e0-553f-ea96-56de-586a7d00baa1
+	isActive: false
+	fromColumn: FactReturns.OrderDateKey
+	toColumn: DimDate.DateKey
+

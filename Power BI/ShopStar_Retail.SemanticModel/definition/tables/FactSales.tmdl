@@ -1,0 +1,203 @@
+table FactSales
+	lineageTag: c9049c10-efc1-44b5-85eb-a52b9330725a
+
+	column OrderDateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 3deb8e22-8e3b-4837-ad3a-86a9253a2360
+		summarizeBy: none
+		sourceColumn: OrderDateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 78ab9804-7fc0-44de-b54f-add7cbd3ad76
+		summarizeBy: none
+		sourceColumn: CustomerSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 916a9bc4-ca78-4376-8fb0-bf361da1dd6b
+		summarizeBy: none
+		sourceColumn: ProductSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreSK
+		dataType: int64
+		formatString: 0
+		lineageTag: e2dc06a9-f43a-4a8c-93fa-1ed273abf679
+		summarizeBy: none
+		sourceColumn: StoreSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmployeeSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 86147447-36cd-48c4-b2dd-1492a970f10a
+		summarizeBy: none
+		sourceColumn: EmployeeSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 73b315a9-5cfb-415f-933a-d5a1125592d9
+		summarizeBy: none
+		sourceColumn: SupplierSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategorySK
+		dataType: int64
+		formatString: 0
+		lineageTag: d43fdaf7-d934-4fea-b042-f8921c509508
+		summarizeBy: none
+		sourceColumn: CategorySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column RegionSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 92681f03-6e32-4252-a0fe-dda9e29d5651
+		summarizeBy: none
+		sourceColumn: RegionSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderID
+		dataType: int64
+		formatString: 0
+		lineageTag: cb80822b-810e-422a-8daf-f301c2d4fe0e
+		summarizeBy: count
+		sourceColumn: OrderID
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDetailID
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ffb1b98-f47d-4180-aacf-be44bbc55c48
+		summarizeBy: count
+		sourceColumn: OrderDetailID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Channel
+		dataType: string
+		lineageTag: 4f8896af-d59e-486b-af68-ce6045f8990e
+		summarizeBy: none
+		sourceColumn: Channel
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderStatus
+		dataType: string
+		lineageTag: 5f55e8cf-6aa6-4504-aa7d-7583e4fd716e
+		summarizeBy: none
+		sourceColumn: OrderStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		formatString: 0
+		lineageTag: e36f3895-fefe-4087-a8a2-c732a5fa5627
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitPrice
+		dataType: double
+		lineageTag: 58905fdf-9bbd-4ee2-9534-ad768bdd72b4
+		summarizeBy: sum
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column UnitCost
+		dataType: double
+		lineageTag: ca6483ec-0f00-4391-80c6-e8a35d48f247
+		summarizeBy: sum
+		sourceColumn: UnitCost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DiscountPercent
+		dataType: double
+		lineageTag: 9820a70d-fb5c-420c-b42b-c1cf597caa29
+		summarizeBy: sum
+		sourceColumn: DiscountPercent
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DiscountAmount
+		dataType: double
+		lineageTag: 9e8511ad-d555-4dfd-bc10-4aa2a6920539
+		summarizeBy: sum
+		sourceColumn: DiscountAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LineTotal
+		dataType: double
+		lineageTag: a9259018-7757-4d11-a376-7406ffa7ae5d
+		summarizeBy: sum
+		sourceColumn: LineTotal
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LineCOGS
+		dataType: double
+		lineageTag: 0d448d60-b05b-44a7-9567-82d0e60db037
+		summarizeBy: sum
+		sourceColumn: LineCOGS
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column GrossProfit
+		dataType: double
+		lineageTag: 7607b102-79dd-4f16-8297-6a78ab1f4821
+		summarizeBy: sum
+		sourceColumn: GrossProfit
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition FactSales = m
+		mode: import
+		queryGroup: 'Fact table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "FactSales"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"SalesFactID", "_LoadedAt", "warehouse.DimCategory", "warehouse.DimCustomer", "warehouse.DimDate", "warehouse.DimEmployee", "warehouse.DimProduct", "warehouse.DimRegion", "warehouse.DimStore", "warehouse.DimSupplier"})
+				in
+				  #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

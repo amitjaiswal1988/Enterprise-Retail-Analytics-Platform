@@ -1,0 +1,134 @@
+table DimProduct
+	lineageTag: 53d0663c-f4d1-4b5e-bbb8-a6aeda954e0b
+
+	column ProductID
+		dataType: int64
+		formatString: 0
+		lineageTag: 1e6681af-679b-4d0c-b1ba-5e3b0e227c73
+		summarizeBy: count
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		lineageTag: 06cadd98-b6d2-4a75-a2eb-1041c3b9ca00
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryID
+		dataType: int64
+		formatString: 0
+		lineageTag: 3b148027-d91a-4fb3-b512-0a02b1eef7e1
+		summarizeBy: count
+		sourceColumn: CategoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryName
+		dataType: string
+		lineageTag: 0325a92d-7391-444b-ba65-008ce1193d99
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubCategoryName
+		dataType: string
+		lineageTag: 63d8b1da-189e-4d35-944b-8d889f0392be
+		summarizeBy: none
+		sourceColumn: SubCategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Brand
+		dataType: string
+		lineageTag: c318461b-6055-4de1-b275-1a179b6dfabe
+		summarizeBy: none
+		sourceColumn: Brand
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitCost
+		dataType: double
+		lineageTag: 8068d557-cc36-44b9-b9d7-78f3527c0416
+		summarizeBy: sum
+		sourceColumn: UnitCost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column UnitPrice
+		dataType: double
+		lineageTag: 704aba5d-e2a3-4199-87a0-693e809e5c0c
+		summarizeBy: sum
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column SupplierID
+		dataType: int64
+		formatString: 0
+		lineageTag: bab8b6a1-3a2e-4bd0-b4e5-02880777b48b
+		summarizeBy: count
+		sourceColumn: SupplierID
+
+		annotation SummarizationSetBy = Automatic
+
+	column GrossMargin
+		dataType: double
+		lineageTag: 01792633-ae28-48e8-aae1-076e9ed4e0a0
+		summarizeBy: sum
+		sourceColumn: GrossMargin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MarginPercent
+		dataType: double
+		lineageTag: 1a06c24d-017d-4212-9a09-0aeaba2f538f
+		summarizeBy: sum
+		sourceColumn: MarginPercent
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PriceRange
+		dataType: string
+		lineageTag: 3a5962a7-6ab0-49f1-a96a-3356d5d9d274
+		summarizeBy: none
+		sourceColumn: PriceRange
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b3b764a-aa79-4f33-af93-6cde73aab9fd
+		summarizeBy: none
+		sourceColumn: ProductSK
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimProduct = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimProduct"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

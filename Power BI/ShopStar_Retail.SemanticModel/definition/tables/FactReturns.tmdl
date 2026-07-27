@@ -1,0 +1,171 @@
+table FactReturns
+	lineageTag: 5e8e7008-a0c1-4ef3-9392-bf41ec7566f9
+
+	column ReturnFactID
+		dataType: int64
+		formatString: 0
+		lineageTag: bdb94694-3778-480d-80e7-e5cb86a65d84
+		summarizeBy: count
+		sourceColumn: ReturnFactID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ReturnDateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 4d85aedb-c1c4-4215-9bbd-e226b34daadf
+		summarizeBy: none
+		sourceColumn: ReturnDateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 57187f35-9d0e-411f-b8fb-6e5329401a0f
+		summarizeBy: count
+		sourceColumn: OrderDateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 97ea2b26-bd81-418f-8b9a-5ba810b061e9
+		summarizeBy: none
+		sourceColumn: CustomerSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductSK
+		dataType: int64
+		formatString: 0
+		lineageTag: b6fec5c9-4365-46a2-b3cb-3ec34d58d33c
+		summarizeBy: none
+		sourceColumn: ProductSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 22444083-e043-4699-9157-dcf9e7259bd4
+		summarizeBy: none
+		sourceColumn: StoreSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategorySK
+		dataType: int64
+		formatString: 0
+		lineageTag: f6ff83ac-0065-49da-817a-93220205ad7e
+		summarizeBy: none
+		sourceColumn: CategorySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column RegionSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 1364d129-ca1d-409f-a03a-117cc93c63a7
+		summarizeBy: none
+		sourceColumn: RegionSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column ReturnID
+		dataType: int64
+		formatString: 0
+		lineageTag: 80537653-73b3-48ed-9510-a87c5cd62131
+		summarizeBy: count
+		sourceColumn: ReturnID
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDetailID
+		dataType: int64
+		formatString: 0
+		lineageTag: 9b6e1546-ed6b-4d3f-9bc9-0bccb5fa890e
+		summarizeBy: count
+		sourceColumn: OrderDetailID
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderID
+		dataType: int64
+		formatString: 0
+		lineageTag: 36485279-f34b-43eb-9ee4-5207c12176d4
+		summarizeBy: count
+		sourceColumn: OrderID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Reason
+		dataType: string
+		lineageTag: db950866-162f-4bf8-828c-35080ac477ca
+		summarizeBy: none
+		sourceColumn: Reason
+
+		annotation SummarizationSetBy = Automatic
+
+	column Condition
+		dataType: string
+		lineageTag: 5ddb3c5c-0365-4ea8-8677-e520a606e3a0
+		summarizeBy: none
+		sourceColumn: Condition
+
+		annotation SummarizationSetBy = Automatic
+
+	column RefundAmount
+		dataType: double
+		lineageTag: 1bdd94fb-5733-430d-9013-ef394862be7c
+		summarizeBy: sum
+		sourceColumn: RefundAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OriginalQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 688f5b90-f23d-4356-8ef2-d5d2407ed801
+		summarizeBy: sum
+		sourceColumn: OriginalQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column OriginalLineTotal
+		dataType: double
+		lineageTag: 98295ecf-8c63-4bc7-a919-eabfefd9635b
+		summarizeBy: sum
+		sourceColumn: OriginalLineTotal
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DaysToReturn
+		dataType: int64
+		formatString: 0
+		lineageTag: c033975f-af97-4514-ae17-d06d059cef2d
+		summarizeBy: sum
+		sourceColumn: DaysToReturn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactReturns = m
+		mode: import
+		queryGroup: 'Fact table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "FactReturns"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"warehouse.DimCategory", "warehouse.DimCustomer", "warehouse.DimDate(OrderDateKey)", "warehouse.DimDate(ReturnDateKey)", "warehouse.DimProduct", "warehouse.DimRegion", "warehouse.DimStore", "_LoadedAt"})
+				in
+				  #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

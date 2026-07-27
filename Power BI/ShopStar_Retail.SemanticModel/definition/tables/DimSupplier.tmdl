@@ -1,0 +1,95 @@
+table DimSupplier
+	lineageTag: e6545f10-5e56-404b-80a6-4f4a15101beb
+
+	column SupplierSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 9129c8e1-b2c2-4d8c-ac24-22478a8382f2
+		summarizeBy: none
+		sourceColumn: SupplierSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierID
+		dataType: int64
+		formatString: 0
+		lineageTag: 53f90dc2-5e40-41e6-92a1-961018cf9ab0
+		summarizeBy: count
+		sourceColumn: SupplierID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierName
+		dataType: string
+		lineageTag: 8251819e-2725-457b-9e00-54c272ec145b
+		summarizeBy: none
+		sourceColumn: SupplierName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: f7bcbb3d-8511-4ffe-81e5-84b8732d66f2
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column LeadTimeDays
+		dataType: int64
+		formatString: 0
+		lineageTag: bba237c3-89e4-4b3f-954b-9fc0d71a0eab
+		summarizeBy: sum
+		sourceColumn: LeadTimeDays
+
+		annotation SummarizationSetBy = Automatic
+
+	column Rating
+		dataType: double
+		lineageTag: aff006d4-b76d-490a-b95f-e8c7c8c2f5d4
+		summarizeBy: sum
+		sourceColumn: Rating
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ContactEmail
+		dataType: string
+		lineageTag: 133f0e91-3b29-46e2-a346-d6876c21b8ea
+		summarizeBy: none
+		sourceColumn: ContactEmail
+
+		annotation SummarizationSetBy = Automatic
+
+	column LeadTimeCategory
+		dataType: string
+		lineageTag: c924d8c2-4816-42a2-8dce-013bee77ea96
+		summarizeBy: none
+		sourceColumn: LeadTimeCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column RatingCategory
+		dataType: string
+		lineageTag: 48925a43-3e91-4a2f-8c7d-a20702b495cd
+		summarizeBy: none
+		sourceColumn: RatingCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimSupplier = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimSupplier"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactSales"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

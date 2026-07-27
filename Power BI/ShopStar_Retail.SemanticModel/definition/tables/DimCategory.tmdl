@@ -1,0 +1,60 @@
+table DimCategory
+	lineageTag: 36df6672-a7bf-4244-a6c0-9d30bb112e78
+
+	column CategoryID
+		dataType: int64
+		formatString: 0
+		lineageTag: fe7a88d0-7a62-42ea-9970-eedbf2ac5940
+		summarizeBy: count
+		sourceColumn: CategoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryName
+		dataType: string
+		lineageTag: 93d83141-0c17-4e37-a070-85285f443a19
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubCategoryName
+		dataType: string
+		lineageTag: b6c77803-e3ad-4e7e-8b56-e7043333ac09
+		summarizeBy: none
+		sourceColumn: SubCategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Department
+		dataType: string
+		lineageTag: 2c815379-0baf-4164-8101-c1a3b969123a
+		summarizeBy: none
+		sourceColumn: Department
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategorySK
+		dataType: int64
+		formatString: 0
+		lineageTag: 2d4fec2c-ed1a-49f1-888f-752f0e8a2646
+		summarizeBy: none
+		sourceColumn: CategorySK
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCategory = m
+		mode: import
+		queryGroup: 'Dimension table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimCategory"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

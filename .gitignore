@@ -32,6 +32,9 @@ build/
 *.pbix
 *.pbit
 
+# Power BI Project (PBIP) local caches & user settings (keep TMDL/definition only)
+**/.pbi/
+
 # ---------------------------------------------------------------------------
 # IDE / Editor
 # ---------------------------------------------------------------------------

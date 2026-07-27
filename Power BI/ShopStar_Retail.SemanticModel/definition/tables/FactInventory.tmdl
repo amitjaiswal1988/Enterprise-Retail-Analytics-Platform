@@ -1,0 +1,155 @@
+table FactInventory
+	lineageTag: 250bf5df-1a18-484d-a52a-115dee8412d1
+
+	column InventoryFactID
+		dataType: int64
+		formatString: 0
+		lineageTag: c083206d-0fc0-4068-a8a6-912d8bb1c7d0
+		summarizeBy: count
+		sourceColumn: InventoryFactID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SnapshotDateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 78571688-45ae-4a08-b9f1-b734eaf564c4
+		summarizeBy: none
+		sourceColumn: SnapshotDateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 0e33c412-f4a7-4152-b6b0-6f355f0cc333
+		summarizeBy: none
+		sourceColumn: ProductSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column StoreSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 87e33e51-5ba1-4968-9397-3490954a74b2
+		summarizeBy: none
+		sourceColumn: StoreSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierSK
+		dataType: int64
+		formatString: 0
+		lineageTag: da09e9bb-5d39-4a49-a84b-6145e876234c
+		summarizeBy: none
+		sourceColumn: SupplierSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategorySK
+		dataType: int64
+		formatString: 0
+		lineageTag: a7691204-470f-4c55-aabd-9d58407f45bd
+		summarizeBy: none
+		sourceColumn: CategorySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column RegionSK
+		dataType: int64
+		formatString: 0
+		lineageTag: ecf1b5a6-bd4f-4da6-9220-7eb0c7d5bc83
+		summarizeBy: none
+		sourceColumn: RegionSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column InventoryID
+		dataType: int64
+		formatString: 0
+		lineageTag: fdc0da3c-a89d-4952-b4b3-1f563ce46fa0
+		summarizeBy: count
+		sourceColumn: InventoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	column QuantityOnHand
+		dataType: int64
+		formatString: 0
+		lineageTag: 3c7208d2-94b3-40a8-94d5-b8b9676d1589
+		summarizeBy: sum
+		sourceColumn: QuantityOnHand
+
+		annotation SummarizationSetBy = Automatic
+
+	column ReorderPoint
+		dataType: int64
+		formatString: 0
+		lineageTag: cd9bc3a6-6374-439f-b218-2dc3ad0a6a22
+		summarizeBy: sum
+		sourceColumn: ReorderPoint
+
+		annotation SummarizationSetBy = Automatic
+
+	column ReorderQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 9b46fcaf-6cb6-46f7-9853-8b010944f901
+		summarizeBy: sum
+		sourceColumn: ReorderQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitCost
+		dataType: double
+		lineageTag: 6389aaa4-faa2-44d5-be44-455166011fff
+		summarizeBy: sum
+		sourceColumn: UnitCost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column InventoryValue
+		dataType: double
+		lineageTag: 6b753c33-a3d1-4ed1-afa7-d0502ff73093
+		summarizeBy: sum
+		sourceColumn: InventoryValue
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column IsLowStock
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 6acba277-6626-428f-b8b7-313e594e512f
+		summarizeBy: none
+		sourceColumn: IsLowStock
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsOutOfStock
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 12d4aee7-c305-4e68-b4f3-6bcf23afdd92
+		summarizeBy: none
+		sourceColumn: IsOutOfStock
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactInventory = m
+		mode: import
+		queryGroup: 'Fact table'
+		source =
+				let
+				  Source = Sql.Database("localhost", "RetailDW"),
+				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "FactInventory"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.DimCategory", "warehouse.DimDate", "warehouse.DimProduct", "warehouse.DimRegion", "warehouse.DimStore", "warehouse.DimSupplier"})
+				in
+				  #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

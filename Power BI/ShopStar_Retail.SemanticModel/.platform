@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "ShopStar_Retail"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "4d72d37f-9305-4e58-a8c7-09c9350410f0"
+  }
+}
