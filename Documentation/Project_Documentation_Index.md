@@ -10,7 +10,7 @@
 
 ## How to use this index
 
-1. **Recruiter / interviewer (10 minutes):** Read the [README](../README.md), then the [Dashboard Presentation Guide](Dashboard_Presentation_Guide.md), then the [Interview Preparation Guide](Interview_Preparation_Complete_Guide.md).
+1. **Recruiter / interviewer (10 minutes):** Read the [README](../README.md), then the [Dashboard Presentation Guide](Dashboard_Presentation_Guide.md) (or the deeper [Dashboard Complete Explanation](Dashboard_Complete_Explanation.md)), then the [Interview Preparation Guide](Interview_Preparation_Complete_Guide.md).
 2. **New developer setting up (1 hour):** Follow [Developer Setup Guide](Developer_Setup_Guide.md) → [Guides/01–06](../Guides/) in order.
 3. **Reviewer checking the build:** Read the [Technical Design Document](Technical_Design_Document_Phase3.md) → [Data Modeling Best Practices](Data_Modeling_Best_Practices.md) → the SQL and Power BI folders.
 
@@ -26,6 +26,8 @@ For business stakeholders and analysts: what the platform is for and what it fou
 | [Business_Insights_Report.md](Business_Insights_Report.md) | Key findings from the data (revenue, margin, regions, returns). | Executives, analysts | 147 | 8 |
 | [Dashboard_Specifications.md](Dashboard_Specifications.md) | The design spec for each of the 9 dashboards. | BI developers | 152 | 8 |
 | [Dashboard_Presentation_Guide.md](Dashboard_Presentation_Guide.md) | How to present each dashboard to a VP/CEO (WHO/WHAT/WHY/WHEN + scripts + Q&A). | Presenter / job candidate | 492 | 8 |
+| [Dashboard_Complete_Explanation.md](Dashboard_Complete_Explanation.md) | Full 9-page explanation — problem, layout, chart reasoning, script, insights, Q&A, build. | Presenter / job candidate | 729 | 14 |
+| [Documentation_Audit_Report.md](Documentation_Audit_Report.md) | Audit of every doc/SQL/DAX file for WHAT/WHY/WHEN + comments. | Reviewer / architect | 179 | 14 |
 
 ---
 

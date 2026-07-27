@@ -4,6 +4,14 @@
 
 ---
 
+> **WHAT:** A one-page big-picture view of the whole project — what we are building, why it matters, and how all the pieces (Python, SQL, Power BI) fit together.
+>
+> **WHY:** Before touching any tool, you need the mental map. This document gives you that map so every later step makes sense.
+>
+> **WHEN:** Read this **first**, before any other guide. After this, follow the numbered guides (01 → 13) in order.
+
+---
+
 ## What Is This Project?
 
 This is an **end-to-end Enterprise Business Intelligence (BI) project** that demonstrates how Fortune 500 companies (like Walmart, Amazon, Target) build analytics platforms.

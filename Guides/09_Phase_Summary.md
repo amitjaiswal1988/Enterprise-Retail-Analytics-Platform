@@ -4,6 +4,14 @@
 
 ---
 
+> **WHAT:** A phase-by-phase timeline of the project — what was built in each phase and what it delivered.
+>
+> **WHY:** It shows the project as a story with a clear order (business → data → warehouse → model → dashboards → deployment). This is exactly how you should narrate the project in an interview.
+>
+> **WHEN:** Use this as a quick reference before an interview or a status update, or whenever you need to remember what a given phase produced.
+
+---
+
 ## Phase 1: Business Understanding ✅
 
 | Attribute | Details |

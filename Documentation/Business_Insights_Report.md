@@ -7,6 +7,12 @@
 > **Reconciliation note:** if your Power BI **Total Revenue** card shows a smaller
 > number than $719M, the model's `FactSales` is being limited by a load step or an
 > active date/slicer filter — the full-data revenue is **$719.2M**.
+>
+> **WHAT:** A plain-English summary of the key business findings from the data — revenue, margin, channel mix, regions, customers, inventory, and returns.
+>
+> **WHY:** Numbers alone do not help decisions. This report turns the numbers into insights and actions a leader can use.
+>
+> **WHEN / audience:** For VPs, analysts, and interviewers. Use it before a leadership review or when preparing to talk about "what the data says." Refresh it after each new data load.
 
 ---
 

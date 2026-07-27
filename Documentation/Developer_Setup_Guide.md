@@ -4,6 +4,14 @@
 
 ---
 
+> **WHAT:** Step-by-step instructions to set up the full local development environment — SQL Server, Python, VS Code, and Power BI Desktop — so you can run the project end to end.
+>
+> **WHY:** A new developer (or your future self on a new laptop) should be able to go from zero to a working project without guessing. Each tool is chosen for a reason: SQL Server for the warehouse, Python for data generation, Power BI for the dashboards.
+>
+> **WHEN:** Use this the very first time you set up the project on a machine, and again whenever you need to reinstall or repair a tool.
+
+---
+
 | Document Control | Details |
 |-----------------|---------|
 | **Document ID** | GUIDE-SETUP-2026-001 |

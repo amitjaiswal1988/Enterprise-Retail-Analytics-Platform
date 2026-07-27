@@ -220,7 +220,7 @@ python -m pytest tests/test_data_quality.py -v
 
 **10-minute tour:**
 1. Read this README for the big picture.
-2. Open [Documentation/Dashboard_Presentation_Guide.md](Documentation/Dashboard_Presentation_Guide.md) — see the 9 dashboards explained in business terms.
+2. Open [Documentation/Dashboard_Presentation_Guide.md](Documentation/Dashboard_Presentation_Guide.md) — see the 9 dashboards explained in business terms. For the full page-by-page breakdown (layout, chart reasoning, scripts, Q&A), see [Documentation/Dashboard_Complete_Explanation.md](Documentation/Dashboard_Complete_Explanation.md).
 3. Skim [Documentation/Interview_Preparation_Complete_Guide.md](Documentation/Interview_Preparation_Complete_Guide.md) — 50 Q&A showing depth.
 
 **30-minute deep dive:**

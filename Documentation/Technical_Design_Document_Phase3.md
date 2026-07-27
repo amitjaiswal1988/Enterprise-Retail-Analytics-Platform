@@ -4,6 +4,14 @@
 
 ---
 
+> **WHAT:** The technical blueprint for the database — the 3-layer design (Landing → Staging → Warehouse), the star schema, and the key design decisions with their rationale.
+>
+> **WHY:** Every design choice (star vs snowflake, columnstore indexes, surrogate keys) has a trade-off. This document records **why** each choice was made so it can be defended in a design review or an interview.
+>
+> **WHEN:** Read this before building or changing any table, and use it as the reference when someone asks "why is the warehouse designed this way?"
+
+---
+
 | Document Control | Details |
 |-----------------|---------|
 | **Document ID** | TDD-PHASE3-2026-001 |

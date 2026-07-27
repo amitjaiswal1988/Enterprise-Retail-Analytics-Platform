@@ -4,6 +4,14 @@
 
 ---
 
+> **WHAT:** This guide explains how we set up VS Code (our code editor) and GitHub Copilot (our AI coding assistant) for the project — the extensions, the settings, and how the AI helps us write SQL, Python, and DAX faster.
+>
+> **WHY:** A well-configured editor removes friction. The right extensions catch errors early, format code automatically, and let Copilot suggest correct code — which means fewer bugs and faster delivery.
+>
+> **WHEN:** Read this once at the start of the project (during environment setup), and come back to it whenever you install a new machine or an extension stops working.
+
+---
+
 ## VS Code — Our Primary Tool
 
 VS Code is where you:

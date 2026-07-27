@@ -1,5 +1,11 @@
 # Phase 6 — Power BI Semantic Model (Journey Log)
 
+> **WHAT:** A hands-on journey log of Phase 6 (building the Power BI semantic model) — what was built, which errors appeared, how they were fixed, and what the key concepts mean.
+>
+> **WHY:** Kept as a personal revision log so the learning and the fixes are not lost. It is written in Hinglish (Hindi + English) on purpose, as a quick self-revision aid; the formal English version of the same material is in [PowerBI_Implementation_Guide](PowerBI_Implementation_Guide.md) and [Data_Modeling_Best_Practices](Data_Modeling_Best_Practices.md).
+>
+> **WHEN:** Use this when you want to quickly recall how the semantic model was built and which problems were solved during Phase 6.
+>
 > Yeh document Phase 6 ka poora hands-on journey capture karta hai — humne kya banaya, kaunse errors aaye, kaise fix kiye, aur key concepts ka matlab (Hinglish mein, taaki revise karna easy ho).
 
 ---
