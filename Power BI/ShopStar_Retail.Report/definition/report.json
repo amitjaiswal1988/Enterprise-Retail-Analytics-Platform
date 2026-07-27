@@ -75,6 +75,11 @@
           "name": "ShopStar_Theme",
           "path": "ShopStar_Theme.json",
           "type": "CustomTheme"
+        },
+        {
+          "name": "ShopStar_Logo_Full.png",
+          "path": "ShopStar_Logo_Full.png",
+          "type": "Image"
         }
       ]
     }
