@@ -15,24 +15,19 @@ queryGroup 'Fact table'
 
 	annotation PBI_QueryGroupOrder = 1
 
-annotation __PBI_TimeIntelligenceEnabled = 1
+annotation __PBI_TimeIntelligenceEnabled = 0
 
 annotation PBI_QueryOrder = ["DimCategory","DimCustomer","DimDate","DimEmployee","DimProduct","DimRegion","DimStore","DimSupplier","FactInventory","FactReturns","FactSales"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
 ref table DimCategory
-ref table DateTableTemplate_a61148e4-ac3e-4de3-80a6-2441b6041b3c
 ref table DimCustomer
-ref table LocalDateTable_e4ac849f-e1d6-44d5-a9e7-d67239f56b34
 ref table DimDate
-ref table LocalDateTable_26258f59-aab9-4881-8bae-aeded7f57776
 ref table DimEmployee
-ref table LocalDateTable_6a5b1183-a61d-42c4-a257-b9e28c233599
 ref table DimProduct
 ref table DimRegion
 ref table DimStore
-ref table LocalDateTable_d6cd7c62-2281-406e-9a32-91a3ccb40517
 ref table DimSupplier
 ref table FactInventory
 ref table FactReturns

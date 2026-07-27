@@ -66,11 +66,6 @@ table DimStore
 		summarizeBy: none
 		sourceColumn: OpenDate
 
-		variation Variation
-			isDefault
-			relationship: b7872a13-1067-44f6-87bc-4669cea74f4e
-			defaultHierarchy: LocalDateTable_d6cd7c62-2281-406e-9a32-91a3ccb40517.'Date Hierarchy'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
@@ -100,6 +95,25 @@ table DimStore
 		sourceColumn: YearsOpen
 
 		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Region Hierarchy'
+		lineageTag: 86432c39-1e5c-4247-9cc4-21071d262e45
+
+		level Region
+			lineageTag: 14291998-aa45-46d0-a659-8b8c33e026f4
+			column: Region
+
+		level State
+			lineageTag: bb775f86-6fc6-44c4-8ae3-4ff98323d3a2
+			column: State
+
+		level City
+			lineageTag: 42de0507-6ddc-4484-8fdf-a91b56493956
+			column: City
+
+		level StoreName
+			lineageTag: 47d57105-8dff-461b-9fd6-5be7f3335fe1
+			column: StoreName
 
 	partition DimStore = m
 		mode: import

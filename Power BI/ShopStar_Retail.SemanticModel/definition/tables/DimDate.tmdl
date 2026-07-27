@@ -1,21 +1,20 @@
 table DimDate
 	lineageTag: f7890236-a801-47a1-b4b2-9d7ceb23bfef
+	dataCategory: Time
 
 	column FullDate
 		dataType: dateTime
-		formatString: Long Date
+		isKey
+		formatString: dd/mm/yyyy
 		lineageTag: de5fd672-d846-4164-819a-7c3f77fc1aca
 		summarizeBy: none
 		sourceColumn: FullDate
 
-		variation Variation
-			isDefault
-			relationship: 6fcde315-db32-49d9-8f6d-04cd9810531c
-			defaultHierarchy: LocalDateTable_26258f59-aab9-4881-8bae-aeded7f57776.'Date Hierarchy'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
 
 	column DayOfWeek
 		dataType: int64
@@ -31,6 +30,9 @@ table DimDate
 		lineageTag: 8ab7b4ee-28f8-4096-bba3-846eae6a0a6f
 		summarizeBy: none
 		sourceColumn: DayName
+		sortByColumn: DayOfWeek
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -75,6 +77,9 @@ table DimDate
 		lineageTag: 769824a7-a901-482f-836e-e2f7ba06bf89
 		summarizeBy: none
 		sourceColumn: MonthName
+		sortByColumn: MonthNumber
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -219,12 +224,37 @@ table DimDate
 
 	column DateKey
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: 7e8d9b03-673b-4e28-be1d-523ed93d39ec
 		summarizeBy: none
 		sourceColumn: DateKey
+		sortByColumn: MonthNumber
+
+		changedProperty = SortByColumn
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
+
+	hierarchy Calendar
+		lineageTag: fc4f3792-32a2-4a75-bb55-9d71874eec33
+
+		level Year
+			lineageTag: d5276fe9-bfbe-4009-91a7-f22af96030fd
+			column: Year
+
+		level Quarter
+			lineageTag: accb05f3-c03a-4c74-bb20-64486a27267e
+			column: Quarter
+
+		level MonthName
+			lineageTag: a8f4c3b3-545d-4837-a5db-ce9915202705
+			column: MonthName
+
+		level DayOfMonth
+			lineageTag: fb47b3f5-a0ae-4383-bc79-b20fef968a47
+			column: DayOfMonth
 
 	partition DimDate = m
 		mode: import

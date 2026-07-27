@@ -117,6 +117,25 @@ table DimProduct
 
 		annotation SummarizationSetBy = Automatic
 
+	hierarchy 'Product Hierarchy'
+		lineageTag: b98b960e-0788-47cf-9737-bfb1450f6cda
+
+		level CategoryName
+			lineageTag: 8998d80b-f02a-482b-8f17-348ca1ffb73a
+			column: CategoryName
+
+		level SubCategoryName
+			lineageTag: f7d25001-e5e8-4c4a-bb01-1222340e74dc
+			column: SubCategoryName
+
+		level Brand
+			lineageTag: d17739bc-34b7-4aa9-83d9-9ce5266a2091
+			column: Brand
+
+		level ProductName
+			lineageTag: 33842fce-f0c2-40f6-808f-1a44eef1a619
+			column: ProductName
+
 	partition DimProduct = m
 		mode: import
 		queryGroup: 'Dimension table'

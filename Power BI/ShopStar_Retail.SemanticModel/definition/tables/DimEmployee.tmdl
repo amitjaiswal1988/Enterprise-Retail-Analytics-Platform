@@ -75,11 +75,6 @@ table DimEmployee
 		summarizeBy: none
 		sourceColumn: HireDate
 
-		variation Variation
-			isDefault
-			relationship: 80294e33-21d2-4a85-82e8-dbe4cf4f55fe
-			defaultHierarchy: LocalDateTable_6a5b1183-a61d-42c4-a257-b9e28c233599.'Date Hierarchy'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
