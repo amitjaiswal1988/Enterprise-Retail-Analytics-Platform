@@ -349,15 +349,20 @@ git push origin main
 
 ## Prompt Success Rate
 
-| Category | Total | Succeeded | Failed | Success Rate |
-|----------|-------|-----------|--------|-------------|
+> Updated to cover all prompts **P-001 to P-034** (each prompt is counted under one primary category).
+
+| Category | Total | Succeeded | Failed / Partial | Success Rate |
+|----------|-------|-----------|------------------|-------------|
 | ⚙️ Setup | 3 | 3 | 0 | 100% |
-| 🔀 Git | 5 | 3 | 2 | 60% |
-| 📊 Data | 3 | 2 | 1 | 67% |
-| 🔧 Fix | 3 | 1 | 2 | 33% |
-| ✏️ Rename | 2 | 2 | 0 | 100% |
-| 📝 Docs | 2 | 2 | 0 | 100% |
-| **Total** | **18** | **13** | **5** | **72%** |
+| 🔀 Git | 6 | 5 | 1 | 83% |
+| 📊 Data / ETL | 6 | 6 | 0 | 100% |
+| 🔧 Fix | 4 | 2 | 2 | 50% |
+| ✏️ Rename | 1 | 1 | 0 | 100% |
+| 📝 Docs | 12 | 12 | 0 | 100% |
+| 🎨 Dashboard | 2 | 2 | 0 | 100% |
+| **Total** | **34** | **31** | **3** | **91%** |
+
+**Trend:** the early phases (P-001 to P-015) had most of the failures — git and encoding issues while setting up. From P-016 onward (rename, database, dashboards, documentation) the success rate is effectively 100%, because the prompts became specific, phase-scoped, and well-structured.
 
 ---
 
@@ -396,6 +401,114 @@ git push origin main
 | **Category** | 📊 Data / 📝 Docs |
 | **Prompt** | "As Senior BI Engineer, create the COMPLETE Power BI implementation for RetailDW — 100 DAX measures (5 files), Power Query M code, Power BI Service guide, Data Modeling best practices; every line commented WHAT/WHY/WHEN; all 15 BRD KPIs with RAG vs targets." |
 | **Result** | ✅ Success — 100 DAX measures (25+15+20+20+20) matched to exact `warehouse.*` columns; `PowerQuery_M_Code_Complete.md`; `PowerBI_Service_Complete_Guide.md`; `Data_Modeling_Best_Practices.md`; README + Phase Summary updated. |
+
+---
+
+## Phase 6-14 — Semantic Model, Dashboards, Deployment & Documentation (GitHub Copilot Agent, VS Code)
+
+> **Note on numbering:** P-019 to P-026 above were already used for the Phase 3-5 database/ETL and early Power BI work. The session prompts below therefore continue the sequence from **P-027**. (In the working notes these were sketched as "P-019 to P-026"; they map 1:1 to P-027 to P-034 here.)
+
+### Prompt P-027: Phase 4-7 Complete — DAX, Power Query, Service Guide, Data Modeling
+
+| Field | Details |
+|-------|---------|
+| **When** | Phase 6-7 — building the semantic model + DAX (see also P-026, which this consolidates) |
+| **Tool** | GitHub Copilot |
+| **Category** | 📊 Data / 📝 Docs |
+| **Prompt Text** | `As Senior BI Engineer, complete Phase 4-7: build all DAX measures (Revenue, Profitability, Customer, Inventory/Returns, Advanced), the Power Query M code, the Power BI Service guide, and the Data Modeling best-practices doc. Comment every measure WHAT/WHY/WHEN and map to exact warehouse columns.` |
+| **Result** | ✓ Success — 98 DAX measures across 5 `.dax` files; Power Query M documented; Service + Data Modeling guides written |
+| **What It Created** | `DAX/01–05_*.dax`, `Power BI/PowerQuery_M_Code_Complete.md`, `Documentation/PowerBI_Service_Complete_Guide.md`, `Documentation/Data_Modeling_Best_Practices.md` |
+
+---
+
+### Prompt P-028: Phase 8 — Dashboards + Logo + Business Insights
+
+| Field | Details |
+|-------|---------|
+| **When** | Phase 8 — building the 9 dashboard pages |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 🎨 Dashboard |
+| **Prompt Text** | `Build all 9 Power BI dashboard pages in PBIR format (4 KPI cards + 4 charts each), apply the ShopStar brand theme (navy #1B365D + orange #F7941D), add the ShopStar logo, and write a Business Insights report from the real data numbers.` |
+| **Result** | ✓ Success — 9 pages built on a consistent grid; brand theme + logo wired into the report JSON; insights use verified numbers ($719M, 16.8%, etc.) |
+| **What It Created** | `Power BI/ShopStar_Retail.Report/definition/pages/*`, registered logo resource, `Documentation/Business_Insights_Report.md` |
+
+---
+
+### Prompt P-029: Dashboard Presentation Guide (WHO/WHAT/WHY/WHEN for all 9 pages)
+
+| Field | Details |
+|-------|---------|
+| **When** | Post-Phase 8 — presentation readiness |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs |
+| **Prompt Text** | `Create a Dashboard Presentation Guide that explains each of the 9 dashboards to a VP/CEO — WHO looks at it, WHAT it shows, WHY it matters, WHEN it is used, a talking script, key visuals, business insights, and VP Q&A.` |
+| **Result** | ✓ Success — full VP/CEO presentation guide with scripts and Q&A for every page |
+| **What It Created** | `Documentation/Dashboard_Presentation_Guide.md` |
+
+---
+
+### Prompt P-030: Combined Presentation Guide + Slicers
+
+| Field | Details |
+|-------|---------|
+| **When** | Post-Phase 8 — interactivity + guide merge |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 🎨 Dashboard / 📝 Docs |
+| **Prompt Text** | `Add interactive slicers to every dashboard page (Year, Quarter, Region + page-specific) with sync across pages, and update the presentation guide to cover how to use the slicers live.` |
+| **Result** | ✓ Success — slicers added across all 9 pages (top header band), synced; guide updated |
+| **What It Created** | slicer visuals in `Power BI/ShopStar_Retail.Report/definition/pages/*/visuals/*`, guide update |
+
+---
+
+### Prompt P-031: Rewrite Presentation Guide in Simple English
+
+| Field | Details |
+|-------|---------|
+| **When** | Post-Phase 8 — language cleanup |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs |
+| **Prompt Text** | `Rewrite the Dashboard Presentation Guide completely in simple, professional English only (no Hindi). Keep the same structure and all the real numbers.` |
+| **Result** | ✓ Success — 492-line guide rewritten in clean English; all numbers preserved. Commit `066411a` |
+| **What It Created** | `Documentation/Dashboard_Presentation_Guide.md` (rewritten) |
+
+---
+
+### Prompt P-032: Phase 9-14 Final Mega — Service, RLS, Optimization, Docs, Interview
+
+| Field | Details |
+|-------|---------|
+| **When** | Phases 9-14 — production readiness + wrap-up |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs / 📊 Data |
+| **Prompt Text** | `Complete all remaining phases (9-14): Service deployment guide, Row-Level Security (add roles to the TMDL model), performance optimization guide, documentation index, README polish, and a 50-question interview prep guide. Document everything in simple English with WHAT/WHY/WHEN.` |
+| **Result** | ✓ Success — 4 static RLS region roles added to TMDL (verified filtering in Desktop); 5 new guides; README phases 9-14 marked complete. Commit `9b74fdf` |
+| **What It Created** | `Documentation/PowerBI_Service_Deployment_Guide.md`, `Row_Level_Security_Guide.md`, `Performance_Optimization_Guide.md`, `Project_Documentation_Index.md`, `Interview_Preparation_Complete_Guide.md`, TMDL roles, README |
+
+---
+
+### Prompt P-033: Complete Documentation Audit + Dashboard Explanation Guide
+
+| Field | Details |
+|-------|---------|
+| **When** | Final review — documentation quality gate |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs |
+| **Prompt Text** | `As a Senior BI Architect, audit every .md/.sql/.dax file for WHAT/WHY/WHEN + comments and fix any gaps; then create a complete 9-page dashboard explanation guide (problem, layout, chart reasoning, script, insights, Q&A, build) plus master chart/slicer guides and interview Q&A.` |
+| **Result** | ✓ Success — 55 files audited (100% compliant after 7 fixes); full explanation guide created |
+| **What It Created** | `Documentation/Documentation_Audit_Report.md`, `Documentation/Dashboard_Complete_Explanation.md`, WHAT/WHY/WHEN blocks added to 7 files |
+
+---
+
+### Prompt P-034: Update AI Prompt Playbook (this prompt)
+
+| Field | Details |
+|-------|---------|
+| **When** | Final review — log the session prompts |
+| **Tool** | GitHub Copilot (VS Code, Agent) |
+| **Category** | 📝 Docs |
+| **Prompt Text** | `Update the AI Prompt Playbook — add all prompts used in this session in proper English (When/Tool/Category/Prompt Text/Result/What It Created), and update the Success Rate metrics.` |
+| **Result** | ✓ Success — added P-027 to P-034 and refreshed the success-rate table |
+| **What It Created** | `Guides/11_AI_Prompt_Playbook.md` (this file) |
 
 ---
 
