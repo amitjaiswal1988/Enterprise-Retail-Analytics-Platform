@@ -143,9 +143,12 @@ table DimProduct
 				let
 				  Source = Sql.Database("localhost", "RetailDW"),
 				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimProduct"]}[Data],
-				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"})
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"}),
+				    #"Cleaned Brand" = Table.ReplaceValue(#"Removed Columns", null, "Unbranded", Replacer.ReplaceValue, {"Brand"}),
+				    #"Cleaned Category Null" = Table.ReplaceValue(#"Cleaned Brand", null, "Uncategorized", Replacer.ReplaceValue, {"CategoryName"}),
+				    #"Cleaned Category" = Table.ReplaceValue(#"Cleaned Category Null", "Unknown", "Uncategorized", Replacer.ReplaceValue, {"CategoryName"})
 				in
-				    #"Removed Columns"
+				    #"Cleaned Category"
 
 	annotation PBI_ResultType = Table
 

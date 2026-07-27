@@ -137,7 +137,7 @@ GO
 
 SET IDENTITY_INSERT warehouse.DimCategory ON;
 INSERT INTO warehouse.DimCategory (CategorySK, CategoryID, CategoryName, SubCategoryName, Department, _LoadedAt)
-VALUES (-1, -1, 'Unknown', 'Unknown', 'Unknown', GETDATE());
+VALUES (-1, -1, 'Uncategorized', 'Uncategorized', 'Uncategorized', GETDATE());
 SET IDENTITY_INSERT warehouse.DimCategory OFF;
 GO
 
@@ -329,8 +329,8 @@ CREATE TABLE warehouse.DimProduct (
 GO
 
 SET IDENTITY_INSERT warehouse.DimProduct ON;
-INSERT INTO warehouse.DimProduct (ProductSK, ProductID, ProductName, CategoryID, CategoryName, SubCategoryName, UnitCost, UnitPrice, SupplierID, _LoadedAt)
-VALUES (-1, -1, 'Unknown Product', -1, 'Unknown', 'Unknown', 0, 0, -1, GETDATE());
+INSERT INTO warehouse.DimProduct (ProductSK, ProductID, ProductName, CategoryID, CategoryName, SubCategoryName, Brand, UnitCost, UnitPrice, SupplierID, _LoadedAt)
+VALUES (-1, -1, 'Unknown Product', -1, 'Uncategorized', 'Uncategorized', 'Unbranded', 0, 0, -1, GETDATE());
 SET IDENTITY_INSERT warehouse.DimProduct OFF;
 GO
 

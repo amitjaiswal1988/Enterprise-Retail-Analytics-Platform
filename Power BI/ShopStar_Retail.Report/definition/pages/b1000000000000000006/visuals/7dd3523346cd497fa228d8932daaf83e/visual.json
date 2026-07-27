@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "7dd3523346cd497fa228d8932daaf83e",
+  "position": {
+    "x": 640,
+    "y": 76,
+    "z": 2,
+    "width": 300,
+    "height": 104,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "High Margin Products Count"
+                }
+              },
+              "queryRef": "_Measures.High Margin Products Count",
+              "nativeQueryRef": "High Margin Products Count"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

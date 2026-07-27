@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "b814e3daa47745be80c2f94f5f3b67d8",
+  "position": {
+    "x": 640,
+    "y": 76,
+    "z": 2,
+    "width": 300,
+    "height": 104,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Sales Per Associate"
+                }
+              },
+              "queryRef": "_Measures.Sales Per Associate",
+              "nativeQueryRef": "Sales Per Associate"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -50,9 +50,10 @@ table DimCategory
 				let
 				  Source = Sql.Database("localhost", "RetailDW"),
 				  #"Navigation 1" = Source{[Schema = "warehouse", Item = "DimCategory"]}[Data],
-				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"})
+				    #"Removed Columns" = Table.RemoveColumns(#"Navigation 1",{"_LoadedAt", "warehouse.FactInventory", "warehouse.FactReturns", "warehouse.FactSales"}),
+				    #"Relabel Unknown" = Table.ReplaceValue(#"Removed Columns", "Unknown", "Uncategorized", Replacer.ReplaceValue, {"CategoryName"})
 				in
-				    #"Removed Columns"
+				    #"Relabel Unknown"
 
 	annotation PBI_ResultType = Table
 

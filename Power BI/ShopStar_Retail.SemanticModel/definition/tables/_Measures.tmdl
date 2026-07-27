@@ -208,7 +208,7 @@ table _Measures
 		displayFolder: 07 Profitability
 		lineageTag: a1b2c3d4-0000-0000-0000-00000000020b
 
-	measure 'High Margin Products Count' = CALCULATE ( DISTINCTCOUNT ( DimProduct[ProductSK] ), FILTER ( DimProduct, DimProduct[MarginPercent] > 40 ) )
+	measure 'High Margin Products Count' = CALCULATE ( DISTINCTCOUNT ( DimProduct[ProductSK] ), FILTER ( DimProduct, DimProduct[MarginPercent] > 30 ) )
 		formatString: #,##0
 		displayFolder: 07 Profitability
 		lineageTag: a1b2c3d4-0000-0000-0000-00000000020c

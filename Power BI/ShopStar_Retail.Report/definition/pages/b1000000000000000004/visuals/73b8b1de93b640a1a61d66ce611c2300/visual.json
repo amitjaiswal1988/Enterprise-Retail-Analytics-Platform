@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "73b8b1de93b640a1a61d66ce611c2300",
+  "position": {
+    "x": 952,
+    "y": 76,
+    "z": 3,
+    "width": 300,
+    "height": 104,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Low Stock Items Count"
+                }
+              },
+              "queryRef": "_Measures.Low Stock Items Count",
+              "nativeQueryRef": "Low Stock Items Count"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

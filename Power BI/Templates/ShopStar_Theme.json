@@ -1,0 +1,115 @@
+{
+  "name": "ShopStar Retail",
+  "dataColors": [
+    "#1B365D",
+    "#F7941D",
+    "#2ECC71",
+    "#5B8DEF",
+    "#E74C3C",
+    "#F5B041",
+    "#27AE60",
+    "#2C3E50",
+    "#9B59B6",
+    "#16A085",
+    "#C0392B",
+    "#7F8C8D"
+  ],
+  "foreground": "#2C3E50",
+  "foregroundNeutralSecondary": "#5A6B7B",
+  "foregroundNeutralTertiary": "#8A97A5",
+  "background": "#FFFFFF",
+  "backgroundLight": "#F8F9FA",
+  "backgroundNeutral": "#EAEDF0",
+  "tableAccent": "#1B365D",
+  "good": "#2ECC71",
+  "neutral": "#F7941D",
+  "bad": "#E74C3C",
+  "maximum": "#1B365D",
+  "center": "#F7941D",
+  "minimum": "#F8F9FA",
+  "null": "#EAEDF0",
+  "hyperlink": "#1B365D",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 18, "color": "#1B365D" },
+    "header": { "fontFace": "Segoe UI Semibold", "fontSize": 12, "color": "#2C3E50" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#2C3E50" },
+    "callout": { "fontFace": "Segoe UI Semibold", "fontSize": 30, "color": "#1B365D" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }],
+        "border": [{ "show": false }],
+        "visualHeader": [{ "show": false }],
+        "dropShadow": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#1B365D" } },
+            "position": "Outer",
+            "preset": "BottomRight",
+            "transparency": 88
+          }
+        ],
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#1B365D" } },
+            "fontSize": 12,
+            "fontFamily": "Segoe UI Semibold",
+            "alignment": "left"
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#F8F9FA" } }, "transparency": 0 }],
+        "outspace": [{ "color": { "solid": { "color": "#F8F9FA" } }, "transparency": 0 }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "color": { "solid": { "color": "#1B365D" } }, "fontSize": 26, "fontFamily": "Segoe UI Semibold" }],
+        "categoryLabels": [{ "show": true, "color": { "solid": { "color": "#5A6B7B" } }, "fontSize": 11, "fontFamily": "Segoe UI" }],
+        "wordWrap": [{ "show": true }]
+      }
+    },
+    "cardVisual": {
+      "*": {
+        "calloutValue": [{ "fontColor": { "solid": { "color": "#1B365D" } }, "fontFamily": "Segoe UI Semibold" }]
+      }
+    },
+    "lineChart": {
+      "*": {
+        "lineStyles": [{ "strokeWidth": 3, "showMarker": true }],
+        "legend": [{ "show": true, "position": "Top", "fontSize": 9 }]
+      }
+    },
+    "columnChart": { "*": { "legend": [{ "show": true, "position": "Top", "fontSize": 9 }] } },
+    "clusteredColumnChart": { "*": { "legend": [{ "show": true, "position": "Top", "fontSize": 9 }] } },
+    "barChart": { "*": { "legend": [{ "show": true, "position": "Top", "fontSize": 9 }] } },
+    "clusteredBarChart": { "*": { "legend": [{ "show": true, "position": "Top", "fontSize": 9 }] } },
+    "donutChart": {
+      "*": {
+        "legend": [{ "show": true, "position": "Right", "fontSize": 9 }],
+        "slices": [{ "innerRadiusRatio": 60 }]
+      }
+    },
+    "slicer": {
+      "*": {
+        "header": [{ "show": true, "fontColor": { "solid": { "color": "#1B365D" } }, "fontFamily": "Segoe UI Semibold" }]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "columnHeaders": [{ "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1B365D" } }, "fontFamily": "Segoe UI Semibold" }],
+        "grid": [{ "gridVertical": true, "gridVerticalColor": { "solid": { "color": "#EAEDF0" } }, "gridHorizontal": true, "gridHorizontalColor": { "solid": { "color": "#EAEDF0" } } }]
+      }
+    },
+    "pivotTable": {
+      "*": {
+        "columnHeaders": [{ "fontColor": { "solid": { "color": "#FFFFFF" } }, "backColor": { "solid": { "color": "#1B365D" } }, "fontFamily": "Segoe UI Semibold" }]
+      }
+    }
+  }
+}

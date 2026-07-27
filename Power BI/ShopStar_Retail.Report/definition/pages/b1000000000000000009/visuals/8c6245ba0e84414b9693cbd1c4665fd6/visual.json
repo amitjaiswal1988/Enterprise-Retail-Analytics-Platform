@@ -1,0 +1,56 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "8c6245ba0e84414b9693cbd1c4665fd6",
+  "position": {
+    "x": 16,
+    "y": 458,
+    "z": 6,
+    "width": 616,
+    "height": 246,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactReturns"
+                    }
+                  },
+                  "Property": "Condition"
+                }
+              },
+              "queryRef": "FactReturns.Condition",
+              "nativeQueryRef": "Condition"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Returns Count"
+                }
+              },
+              "queryRef": "_Measures.Total Returns Count",
+              "nativeQueryRef": "Total Returns Count"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

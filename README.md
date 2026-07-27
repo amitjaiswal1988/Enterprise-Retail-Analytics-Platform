@@ -154,7 +154,7 @@ python -m pytest tests/test_data_quality.py -v
 | 5.5 | Analytics Views + SQL Practice + Power BI Guide | ✅ Complete |
 | 6 | Power BI Data Model | ✅ Complete |
 | 7 | Advanced DAX (100+ measures) | ✅ Complete |
-| 8 | Dashboard Development (9 dashboards) | Pending |
+| 8 | Dashboard Development (9 dashboards) + Branding | ✅ Complete |
 | 9 | Power BI Service Deployment | Pending |
 | 10 | Security (Row-Level Security) | Pending |
 | 11 | Performance Optimization | Pending |
